@@ -1,7 +1,7 @@
 """Runs every Dungeons and Dragons test against a Monolith checkout (MONOLITH_DIR, default ../monolith)."""
 import subprocess, sys, os, time
 HERE=os.path.dirname(os.path.abspath(__file__))
-SUITES=["sheet_test.py","creator_test.py"]
+SUITES=["sheet_test.py","creator_test.py","levels_test.py"]
 failed=[];CI=bool(os.environ.get("GITHUB_ACTIONS"))
 for s in SUITES:
     t=time.time();print(f"\n===== {s}",flush=True)

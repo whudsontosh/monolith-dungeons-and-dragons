@@ -14,7 +14,7 @@ function dndNewBuild() {
     bg: "", cAbs: [], cSkills: [], cFeat: "", cTool: "", bgMode: "21", plus2: "", plus1: "",
     species: "", lineage: "", keen: "", skillful: "", versatile: "", skilled: [],
     method: "array", arr: {}, pb: { str: 8, dex: 8, con: 8, int: 8, wis: 8, cha: 8 }, rolls: [], man: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
-    armor: "", shield: false, weapons: [], gear: "", gp: 0,
+    choices: {}, armor: "", shield: false, weapons: [], gear: "", gp: 0,
     name: "", alignment: "", player: "", appearance: "", notes: "", color: "" };
 }
 function dndB(c) { const b = { ...dndNewBuild(), ...(c.build || {}) }; c.build = b; return b; }
@@ -64,7 +64,8 @@ function dndArmorAc(b, tot) {
 function dndOpen(b) {
   const ci = DND_CLASS_INFO[b.cls]; const bg = dndBgOf(b); const sp = DND_SPECIES_INFO[b.species];
   const o = { class: 0, bg: 0, species: 0, abilities: 0, equip: 0, review: 0 };
-  if (!ci) o.class = 1; else { o.class += Math.max(0, ci.pick - b.clsSkills.length); if (ci.expertise) o.class += Math.max(0, ci.expertise - b.expertise.length); }
+  if (!ci) o.class = 1; else { o.class += Math.max(0, ci.pick - b.clsSkills.length); if (ci.expertise) o.class += Math.max(0, ci.expertise - b.expertise.length);
+    dndL1Picks(b).forEach(p => { o.class += Math.max(0, p.count - ((b.choices || {})[p.pool] || []).length); }); }
   if (!bg) o.bg = 1; else {
     if (bg.custom) { o.bg += Math.max(0, 3 - b.cAbs.length) + Math.max(0, 2 - b.cSkills.length) + (b.cFeat ? 0 : 1); }
     if (b.bgMode === "21") o.bg += (b.plus2 ? 0 : 1) + (b.plus1 && b.plus1 !== b.plus2 ? 0 : 1);
@@ -77,6 +78,9 @@ function dndOpen(b) {
   if (!b.name.trim()) o.review = 1;
   return o;
 }
+
+/* level 1 choices some classes have: a fighting style, a primal order, an invocation */
+function dndL1Picks(b) { const L = DND_LEVELS[b.cls]; if (!L) return []; return (L.levels[1] || []).filter(f => f.choose).map(f => ({ pool: f.pool, count: f.choose, options: (L.pools[f.pool] || []).filter(o => dndPrereqLevel(o) <= 1) })); }
 
 /* ---------- the creator page ---------- */
 function dndBuilderView(c) {
@@ -147,18 +151,35 @@ function dndStepClass(c, b) {
       <div style="display:grid;gap:14px;align-content:start">
         <section class="dnd-b-choice"><div class="dnd-b-choice-h"><h3>Starting level</h3></div>
           <div class="row"><select data-dnd="build.level" data-num aria-label="Starting level">${Array.from({ length: 20 }, (_, i) => `<option value="${i + 1}" ${b.level === i + 1 ? "selected" : ""}>Level ${i + 1}</option>`).join("")}</select>
-          <span class="faint dnd-small">Most campaigns start at level 1. Above that, add the extra class features from your book on the sheet.</span></div></section>
+          <span class="faint dnd-small">Most campaigns start at level 1. ${b.level > 1 ? `After Finish you'll make the choices for levels 2 to ${b.level} one level at a time: hit points, subclass, ability increases and feats.` : ""}</span></div></section>
         ${dndChoice(`Skill proficiencies: choose ${ci.pick}`, ci.pick, b.clsSkills.length, dndSkillChips(b, "clsSkills", opts, ci.pick), ci.skills === "any" ? "Bards can pick any skills." : "")}
         ${ci.expertise ? dndChoice(`Expertise: choose ${ci.expertise}`, ci.expertise, b.expertise.length,
           profSkills.length ? `<div class="dnd-chips">${profSkills.map(s => { const on = b.expertise.includes(s); return `<button class="dnd-chip ${on ? "on" : ""}" data-act="dnd-b-toggle" data-k="expertise" data-v="${s}" data-max="${ci.expertise}" ${!on && b.expertise.length >= ci.expertise ? "disabled" : ""}>${esc(DND_SKILL_NAME[s])}</button>`; }).join("")}</div>` : `<p class="faint dnd-small" style="margin:0">Choose your skill proficiencies first.</p>`,
           "Double your proficiency bonus with two skills you're proficient in.") : ""}
+        ${dndL1Picks(b).map(p => { const have = (b.choices || {})[p.pool] || []; return dndChoice(`${p.pool}: choose ${p.count}`, p.count, have.length,
+          `<div class="dnd-chips">${p.options.map(o => { const on = have.includes(o.n); return `<button class="dnd-chip ${on ? "on" : ""}" data-act="dnd-b-choice" data-pool="${esc(p.pool)}" data-v="${esc(o.n)}" data-max="${p.count}" ${!on && have.length >= p.count ? "disabled" : ""}>${esc(o.n)}</button>`; }).join("")}</div>
+          ${have.map(h => { const o = p.options.find(x => x.n === h); return o ? `<p class="dnd-small" style="margin:10px 0 0"><b>${esc(o.n)}.</b> ${esc(dndFirstRule(o.t).slice(0, 360))}</p>` : ""; }).join("")}`); }).join("")}
         <section class="dnd-b-choice"><div class="dnd-b-choice-h"><h3>Level 1 features</h3></div>${dndFeatureList(ci.features)}
           ${ci.spells ? `<p class="faint dnd-small" style="margin:10px 0 0">At level 1 you know ${ci.spells[0] ? `${ci.spells[0]} cantrips and ` : ""}prepare ${ci.spells[1]} spells. Add them on the sheet's Spells tab once you finish.</p>` : ""}</section>
       </div>
+      <div style="display:grid;gap:14px;align-content:start">
       <section class="panel"><div class="panel-h"><h3>Proficiencies</h3></div><div class="panel-b">${dndFacts([
         ["Saving throws", cl.saves.map(a => DND_AB_NAME[a]).join(", ")], ["Armor", esc(dndArmorText(ci.armor))], ["Weapons", esc(dndWeaponText(ci.weapons))], ["Tools", esc(ci.tools)],
         ["Hit points at level 1", `${cl.hd} + your Constitution modifier`], ["Spellcasting", cl.caster === "none" ? "" : esc(DND_CASTERS[cl.caster] + " · " + DND_AB_NAME[cl.spell])]])}</div></section>
+      ${dndLevelTable(b.cls, b.level)}
+      </div>
     </div>`;
+}
+
+/* the class's 20 levels at a glance, like the table in the book */
+function dndLevelTable(cls, upTo) {
+  const L = DND_LEVELS[cls]; if (!L) return "";
+  const rows = []; for (let l = 1; l <= 20; l++) { const fs = (L.levels[l] || []).filter(f => !f.choose).map(f => f.sub ? "Subclass" : f.n);
+    const own = esc([...new Set(fs)].join(", "));
+    const sub = L.sub && (L.sub.levels[l] || []).length ? `<span class="faint">${own ? " · " : ""}${esc(L.sub.n)}: ${esc(L.sub.levels[l].map(f => f.n).join(", "))}</span>` : "";
+    rows.push(`<tr class="${l <= upTo ? "now" : ""}"><td class="dnd-n">${l}</td><td class="dnd-n">${sgn(dndProf(l))}</td><td>${own || sub ? own + sub : `<span class="faint">Class table improvements</span>`}</td></tr>`); }
+  return `<section class="panel"><div class="panel-h"><h3>${esc(cls)} levels</h3><span class="faint dnd-small">${esc(L.sub ? "Subclass in the free rules: " + L.sub.n : "")}</span></div>
+    <div class="tbl-wrap dnd-lvtable"><table><thead><tr><th>Level</th><th>Prof.</th><th>Features</th></tr></thead><tbody>${rows.join("")}</tbody></table></div></section>`;
 }
 
 /* ----- 2. Background ----- */
@@ -306,7 +327,7 @@ function dndStepReview(c, b, open, left) {
 /* ---------- Finish: turn the choices into the sheet ---------- */
 function dndFinishBuild(c) {
   const b = dndB(c); const ci = DND_CLASS_INFO[b.cls]; const cl = DND_CLASSES[b.cls]; const bg = dndBgOf(b); const sp = DND_SPECIES_INFO[b.species]; const tot = dndTotals(b);
-  c.name = b.name.trim(); c.cls = b.cls; c.level = b.level; c.species = b.species; c.background = b.bg === "Custom" ? "" : b.bg;
+  c.name = b.name.trim(); c.cls = b.cls; c.level = 1; c.pendingLevel = b.level > 1 ? b.level : 0; c.species = b.species; c.background = b.bg === "Custom" ? "" : b.bg;
   c.alignment = b.alignment; c.player = b.player; c.appearance = b.appearance; c.notes = b.notes; c.color = b.color;
   DND_ABILITIES.forEach(([a]) => { c.ab[a] = tot[a] ?? 10; c.saveProf[a] = cl.saves.includes(a); });
   c.skills = {}; Object.keys(dndSkillSources(b)).forEach(s => { c.skills[s] = b.expertise.includes(s) ? 2 : 1; });
@@ -330,11 +351,14 @@ function dndFinishBuild(c) {
   // proficiencies and features as text the player can edit
   const tools = [ci.tools, bg.tool].filter(Boolean);
   c.profs = [`Armor: ${dndArmorText(ci.armor)}`, `Weapons: ${dndWeaponText(ci.weapons)}`, tools.length ? `Tools: ${tools.join(", ")}` : "", "Languages: Common, plus two more of your choice"].filter(Boolean).join("\n");
-  const lines = [];
-  lines.push(`${b.cls} (level 1)`); ci.features.forEach(([n, t]) => lines.push(`• ${n}: ${t}`));
-  lines.push("", `${b.species}${b.lineage ? ` (${b.lineage})` : ""}`); sp.traits.forEach(([n, t]) => lines.push(`• ${n}: ${t}`));
-  lines.push("", "Feats"); feats.forEach(f => lines.push(`• ${f}${f === "Magic Initiate" && bg.featNote && bg.feat === f ? ` (${bg.featNote})` : ""}: ${DND_FEATS[f]}`));
+  // class features and feats are listed on the Features tab; the species traits go here
+  const lines = [`${b.species}${b.lineage ? ` (${b.lineage})` : ""}`]; sp.traits.forEach(([n, t]) => lines.push(`• ${n}: ${t}`));
   c.features = lines.join("\n");
+  c.feats = [];
+  if (bg.feat) c.feats.push({ n: bg.feat + (bg.feat === "Magic Initiate" && bg.featNote ? ` (${bg.featNote})` : ""), lvl: 1, src: "Background" });
+  if (b.species === "Human" && b.versatile) c.feats.push({ n: b.versatile, lvl: 1, src: "Species" });
+  c.choices = {}; Object.entries(b.choices || {}).forEach(([k, v]) => { if (v.length) c.choices[k] = v.slice(); });
+  c.hpRolls = {};
   c.done = true; c.build = null;
 }
 
@@ -367,7 +391,10 @@ Object.assign(A, {
     if (Number(el.dataset.d) > 0) { if (b.weapons.length < 30) b.weapons = [...b.weapons, v]; } else { const i = b.weapons.lastIndexOf(v); if (i >= 0) b.weapons = b.weapons.filter((_, j) => j !== i); } }),
   "dnd-b-finish": dndAct(c => { const b = dndB(c); const left = Object.values(dndOpen(b)).reduce((a, n) => a + n, 0); if (left) return false;
     const name = b.name; dndFinishBuild(c); ui.view = "sheet"; ui.dndTab = "sheet"; setTimeout(() => window.scrollTo(0, 0), 0);
-    showNotice(`${name} is ready. Everything's on the sheet now, and you can change any of it.`); }),
+    if (c.pendingLevel > 1) setTimeout(() => dndLvStart(c), 0);
+    else showNotice(`${name} is ready. Everything's on the sheet now, and you can change any of it.`); }),
+  "dnd-b-choice": dndAct((c, el) => { const b = dndB(c); b.choices = b.choices || {}; const p = el.dataset.pool, v = el.dataset.v, max = Number(el.dataset.max) || 1; const l = b.choices[p] || [];
+    b.choices[p] = l.includes(v) ? l.filter(x => x !== v) : l.length < max ? [...l, v] : l; }),
   "dnd-b-skip": dndAct(c => { const b = dndB(c);
     if (b.name) c.name = b.name; if (b.cls) { c.cls = b.cls; DND_ABILITIES.forEach(([a]) => { c.saveProf[a] = DND_CLASSES[b.cls].saves.includes(a); }); } if (b.species) c.species = b.species;
     c.level = b.level || 1; c.build = null; ui.view = "sheet"; ui.dndTab = "details"; }),

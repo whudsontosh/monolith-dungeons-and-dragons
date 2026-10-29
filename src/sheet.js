@@ -83,7 +83,7 @@ function dndTile(label, value, extra = "") { return `<div class="dnd-tile">${val
 function dndSheetView(c) {
   const k = dndCalc(c); const tab = ui.dndTab;
   const sub = [`Level ${c.level}`, c.species, [c.cls, c.subclass && `(${c.subclass})`].filter(Boolean).join(" ")].filter(Boolean).join(" · ") || "New character";
-  const tabs = [["sheet", "Sheet"], ["spells", "Spells"], ["inv", "Inventory"], ["details", "Details"]];
+  const tabs = [["sheet", "Sheet"], ["features", "Features"], ["spells", "Spells"], ["inv", "Inventory"], ["details", "Details"]];
   const back = ROLE === "gm" ? `<button class="btn sm ghost" data-act="close-pc">← The party</button>` : "";
   const sm = ROLE !== "gm" ? sample() : null; const isSample = !!(sm && sm.id === c.id);
   return `<div class="dnd" data-cid="${esc(c.id)}">
@@ -96,12 +96,13 @@ function dndSheetView(c) {
           ${[["normal", "Normal"], ["adv", "Advantage"], ["dis", "Disadvantage"]].map(([m, l]) => `<button class="${ui.dndAdv === m ? "on" : ""}" data-act="dnd-adv" data-m="${m}">${l}</button>`).join("")}
         </div>
         <button class="btn sm ${c.insp ? "primary" : ""}" data-act="dnd-insp" aria-pressed="${c.insp}" ${dndDis(c)}>${c.insp ? "★" : "☆"} Heroic Inspiration</button>
+        ${c.level < 20 && dndCanEdit(c) && DND_LEVELS[c.cls] ? `<button class="btn sm primary" data-act="dnd-levelup">Level up</button>` : ""}
         <button class="btn sm" data-act="dnd-short" ${dndDis(c)}>Short rest</button>
         <button class="btn sm" data-act="dnd-long" ${dndDis(c)}>Long rest</button>
       </div>
     </div>
     <nav class="dnd-tabs" aria-label="Sheet sections">${tabs.map(([id, l]) => `<button class="${tab === id ? "on" : ""}" data-act="dnd-tab" data-t="${id}">${l}</button>`).join("")}</nav>
-    ${tab === "spells" ? dndSpellsTab(c, k) : tab === "inv" ? dndInvTab(c, k) : tab === "details" ? dndDetailsTab(c, k) : dndMainTab(c, k)}
+    ${tab === "features" ? dndFeaturesTab(c, k) : tab === "spells" ? dndSpellsTab(c, k) : tab === "inv" ? dndInvTab(c, k) : tab === "details" ? dndDetailsTab(c, k) : dndMainTab(c, k)}
   </div>`;
 }
 

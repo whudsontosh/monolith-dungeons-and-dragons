@@ -394,3 +394,34 @@ table.dnd-inv input{padding:6px 8px}
 .dnd-finish{width:100%;padding:12px;font-size:16px}
 .dnd-b-nav{display:flex;justify-content:space-between;margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
 }
+
+/* ---------- part 5: features by level and the Level up dialog (levelup.js) ---------- */
+:root:not([data-skin]){
+.dnd-ftop{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.dnd-ctable{flex:1;min-width:0;grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+.dnd-ctable .dnd-tile{min-height:74px}
+.dnd-ctable .dnd-big{font-size:22px}
+.dnd-fgrid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.dnd-fgrid{grid-template-columns:minmax(0,1fr)}}
+.dnd-flist{display:grid;gap:0;padding-top:4px}
+.dnd-frow{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;padding:12px 0;border-bottom:1px dotted var(--line2)}
+.dnd-frow:last-child{border-bottom:0}
+.dnd-frow.sub .dnd-flvl{background:var(--gold);color:var(--band)}
+.dnd-flvl{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--title);color:var(--accent-ink);font-family:var(--f-display);font-weight:700;font-size:13px}
+.dnd-fname{font-family:var(--f-display);font-size:15.5px;color:var(--title);letter-spacing:.02em}
+.dnd-ftext p{margin:6px 0 0;font-size:15px;line-height:1.45}
+.dnd-ftext p b{color:var(--ink)}
+.dnd-fsum{color:var(--ink2)}
+.dnd-more{margin-top:6px;font-size:13.5px;color:var(--accent);font-style:italic}
+.dnd-more:hover{text-decoration:underline}
+.dnd-pick{margin-top:6px}
+.dnd-pick b{color:var(--ink)}
+.dnd-next{margin:0;padding-left:18px;display:grid;gap:4px}
+.dnd-lv{display:grid;gap:14px}
+.dnd-lv-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.dnd-lv-head h3{font-size:24px}
+.dnd-lv-head .chip:first-of-type{margin-left:auto}
+.dnd-lvtable td{padding:5px 8px;font-size:14px}
+.dnd-lvtable tr.now td{background:rgba(201,162,79,.16)}
+.dnd-lvtable .dnd-n{width:56px;font-family:var(--f-display);font-weight:700;color:var(--title)}
+}

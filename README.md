@@ -13,8 +13,10 @@ installs it from **More games** and keeps it up to date.
 | `game.json` | The game's manifest: id, version, the Monolith it needs, its rulesets and files |
 | `src/rules.js` | The rules: abilities, skills, classes, proficiency, spell slots, and every number the sheet works out |
 | `src/data.js` | What the creator offers: class details, backgrounds, species, origin feats, weapons and armor |
+| `src/classdata.js` | Every class's features for levels 1 to 20, class tables, subclasses, feature choices and feats (generated; see below) |
 | `src/sheet.js` | The character sheet (Sheet, Spells, Inventory and Details tabs) and the panel beside the map |
 | `src/builder.js` | The character creator: Class, Background, Species, Abilities, Equipment, Name & finish |
+| `src/levelup.js` | The sheet's Features tab and the Level up dialog |
 | `src/gm.js` | The GM's party table, the GM's view of a sheet, and health rings on map tokens |
 | `src/game.js` | How the game registers with Monolith, the example character and roster cards |
 | `src/skin.css`, `src/fonts/` | The look: parchment, oxblood and gold, Cinzel and Crimson Pro |
@@ -36,6 +38,20 @@ python3 tests/run_all.py
 
 See [DEVELOPING.md](https://github.com/whudsontosh/monolith/blob/main/DEVELOPING.md) in the Monolith
 repository for the full set-up.
+
+## Regenerating the class data
+
+`src/classdata.js` comes from the SRD 5.2 data in the [Foundry VTT dnd5e system](https://github.com/foundryvtt/dnd5e)
+(CC-BY 4.0). To rebuild it (needs `pip install pyyaml`):
+
+```sh
+git clone --depth 1 --filter=blob:none --sparse https://github.com/foundryvtt/dnd5e.git ../fvtt
+(cd ../fvtt && git sparse-checkout set packs/_source)
+python3 scripts/srd-extract.py ../fvtt/packs/_source classes.json   # writes classes.json inside that folder
+python3 scripts/srd-classdata.py ../fvtt/packs/_source/classes.json src/classdata.js
+```
+
+The extractor drops Foundry's own notes about its app, keeping only the rules text.
 
 ## Releasing
 

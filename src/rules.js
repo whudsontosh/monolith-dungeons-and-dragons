@@ -77,6 +77,10 @@ function dndBlank() {
     attacks: [], caster: "auto", spellAb: "", slotsUsed: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], pactUsed: 0, spells: [],
     inv: [], coins: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
     profs: "", features: "", appearance: "", notes: "",
+    feats: [],                  // feats taken: {n, lvl, src}
+    choices: {},                // a feature's picks: {"Eldritch Invocations": ["Agonizing Blast"], ...}
+    hpRolls: {},                // hit point rolls by level (no entry = the average)
+    pendingLevel: 0,            // the creator's target level while its level-ups are still being made
     color: "", done: false, build: null, createdAt: now, updatedAt: now,
   };
 }
@@ -96,6 +100,10 @@ function dndNormalize(x) {
   c.jack = !!c.jack; c.insp = !!c.insp; c.done = !!c.done; c.alert = !!c.alert; c.hpPerLvl = num(c.hpPerLvl, 0, 5, 0);
   // a character still in the creator keeps its choices here (see builder.js)
   c.build = x && x.build && typeof x.build === "object" ? clone(x.build) : null;
+  c.feats = (Array.isArray(c.feats) ? c.feats : []).slice(0, 60).map(f => ({ n: str(f && f.n, 80), lvl: num(f && f.lvl, 0, 20, 0), src: str(f && f.src, 40) })).filter(f => f.n);
+  const ch = {}; Object.entries(c.choices && typeof c.choices === "object" ? c.choices : {}).slice(0, 20).forEach(([k, v]) => { if (Array.isArray(v)) ch[str(k, 60)] = v.slice(0, 20).map(x => str(x, 80)).filter(Boolean); }); c.choices = ch;
+  const hr = {}; Object.entries(c.hpRolls && typeof c.hpRolls === "object" ? c.hpRolls : {}).forEach(([k, v]) => { const L = Number(k), n = Number(v); if (L >= 2 && L <= 20 && n >= 1 && n <= 12) hr[L] = Math.round(n); }); c.hpRolls = hr;
+  c.pendingLevel = num(c.pendingLevel, 0, 20, 0);
   c.ac = num(c.ac, 0, 50, 10); c.speed = num(c.speed, 0, 300, 0); c.initBonus = num(c.initBonus, -20, 20, 0);
   c.hpMax = num(c.hpMax, 0, 9999, 0); c.hp = c.hp == null || c.hp === "" ? null : num(c.hp, 0, 9999, 0);
   c.hpTemp = num(c.hpTemp, 0, 9999, 0); c.hdSpent = num(c.hdSpent, 0, 20, 0);
@@ -125,7 +133,9 @@ function dndCalc(c) {
     const p = c.skills[k] || 0; skill[k] = mod[a] + (p === 2 ? pb * 2 : p === 1 ? pb : c.jack ? Math.floor(pb / 2) : 0); });
   const init = mod.dex + (c.jack ? Math.floor(pb / 2) : 0) + (c.alert ? pb : 0) + (c.initBonus || 0);
   const hd = cl ? cl.hd : 8;
-  const hpSuggest = Math.max(1, hd + mod.con + (c.level - 1) * (hd / 2 + 1 + mod.con) + (c.hpPerLvl || 0) * c.level);
+  let hpSuggest = Math.max(1, hd + mod.con);
+  for (let l = 2; l <= c.level; l++) hpSuggest += Math.max(1, ((c.hpRolls || {})[l] || hd / 2 + 1) + mod.con);
+  hpSuggest += (c.hpPerLvl || 0) * c.level;
   const hpMax = c.hpMax || hpSuggest;
   const hp = c.hp == null ? hpMax : Math.min(c.hp, hpMax);
   const baseSpeed = c.speed || DND_SPECIES[c.species] || 30;
