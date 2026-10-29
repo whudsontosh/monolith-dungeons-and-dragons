@@ -1,0 +1,88 @@
+name: Test and release the Dungeons and Dragons game
+
+# Publishes a game release whenever game.json has a version that isn't released yet: bump
+# "version", add a CHANGELOG.md section, push to main. The game is tested against the latest
+# Monolith release, bundled, signed with the Monolith signing key (the MONOLITH_SIGNING_KEY secret)
+# and published. No app build is involved: Monolith installs the update the next time someone
+# opens the game. "Run workflow" on the Actions tab tests a branch without publishing.
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test-and-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Plan
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="$(python3 -c "import json;print(json.load(open('game.json'))['version'])")"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF" == refs/tags/v* && "v$V" != "$GITHUB_REF_NAME" ]]; then echo "::error::Tag $GITHUB_REF_NAME doesn't match game.json ($V)."; exit 1; fi
+          if [[ "$GITHUB_EVENT_NAME" != "workflow_dispatch" ]] && ! gh release view "v$V" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "publish=true" >> "$GITHUB_OUTPUT"; echo "Version $V is new: testing and publishing."
+          else
+            echo "publish=false" >> "$GITHUB_OUTPUT"; echo "Testing only."
+          fi
+          # test against the newest released Monolith (or its main branch before the first release)
+          TAG="$(gh release view --repo whudsontosh/monolith --json tagName -q .tagName 2>/dev/null || true)"
+          echo "monolith=${TAG:-main}" >> "$GITHUB_OUTPUT"; echo "Monolith: ${TAG:-main}"
+      - uses: actions/checkout@v4
+        with:
+          repository: whudsontosh/monolith
+          ref: ${{ steps.plan.outputs.monolith }}
+          path: monolith
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        run: |
+          (cd monolith && npm ci --no-audit --no-fund --omit=dev)
+          pip install --break-system-packages playwright==1.55.0
+          python3 -m playwright install --with-deps chromium
+      - name: Build
+        run: |
+          (cd monolith && python3 src/build.py)
+          python3 src/build.py
+      - name: Test against Monolith ${{ steps.plan.outputs.monolith }}
+        env:
+          MONOLITH_DIR: ${{ github.workspace }}/monolith
+        run: python3 tests/run_all.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-screens
+          path: dist/test-out/
+          retention-days: 7
+      - name: Sign
+        if: steps.plan.outputs.publish == 'true'
+        env:
+          MONOLITH_SIGNING_KEY: ${{ secrets.MONOLITH_SIGNING_KEY }}
+        run: |
+          if [ -z "$MONOLITH_SIGNING_KEY" ]; then echo "::error::The MONOLITH_SIGNING_KEY secret isn't set, so this release can't be signed."; exit 1; fi
+          node scripts/sign.js dist/release/release.json
+          # the signature must verify against the key built into Monolith
+          node -e "const s=require('./monolith/signing');const f=require('fs');if(!s.verify(f.readFileSync('dist/release/release.json'),f.readFileSync('dist/release/release.json.sig','utf8'))){console.error('signature does not verify against Monolith');process.exit(1)}"
+          python3 scripts/release-notes.py "${{ steps.plan.outputs.version }}" > notes.md
+          ls -la dist/release
+      - name: Publish
+        if: steps.plan.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          V: ${{ steps.plan.outputs.version }}
+        run: |
+          gh release create "v$V" dist/release/* --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "Dungeons and Dragons $V" --notes-file notes.md --latest

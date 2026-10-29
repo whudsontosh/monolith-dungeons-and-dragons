@@ -1,0 +1,6 @@
+dist/
+__pycache__/
+*.pem
+.DS_Store
+Thumbs.db
+before-*/

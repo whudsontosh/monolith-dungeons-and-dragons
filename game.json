@@ -1,0 +1,12 @@
+{
+  "format": "monolith-game",
+  "id": "dnd",
+  "name": "Dungeons and Dragons",
+  "version": "0.1.0",
+  "api": 1,
+  "minMonolith": "1.0.0",
+  "tagline": "Beta Build.",
+  "rulesets": [{ "id": "dnd5.5e", "name": "5.5e" }],
+  "entry": { "player": ["game.js"], "gm": ["game.js"] },
+  "css": ["skin.css"]
+}

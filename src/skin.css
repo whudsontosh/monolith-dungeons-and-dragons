@@ -1,0 +1,396 @@
+/* ======================================================================================
+   Dungeons and Dragons: the look. "The adventurer's tome": parchment pages, oxblood
+   headings, gold rules, a leather top band, Cinzel capitals over Crimson Pro text.
+
+   How it works: Monolith's own stylesheet still does all the layout. This file swaps its
+   colours and fonts (part 1), then dresses up the core screens (part 2). Everything sits
+   inside ":root:not([data-skin])" so it beats Monolith's own rules; keep it that way, and
+   don't add "skin" to game.json (that would switch Monolith's layout off).
+
+   List it in game.json:  "css": ["skin.css"]   Fonts live in src/fonts/ (SIL OFL 1.1).
+   ====================================================================================== */
+
+@font-face{font-family:"Cinzel";font-weight:600;font-display:swap;src:url("fonts/cinzel-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"Cinzel";font-weight:700;font-display:swap;src:url("fonts/cinzel-latin-700-normal.woff2") format("woff2")}
+@font-face{font-family:"Crimson Pro";font-weight:400;font-display:swap;src:url("fonts/crimson-pro-latin-400-normal.woff2") format("woff2")}
+@font-face{font-family:"Crimson Pro";font-weight:400;font-style:italic;font-display:swap;src:url("fonts/crimson-pro-latin-400-italic.woff2") format("woff2")}
+@font-face{font-family:"Crimson Pro";font-weight:600;font-display:swap;src:url("fonts/crimson-pro-latin-600-normal.woff2") format("woff2")}
+@font-face{font-family:"Crimson Pro";font-weight:600;font-style:italic;font-display:swap;src:url("fonts/crimson-pro-latin-600-italic.woff2") format("woff2")}
+@font-face{font-family:"Crimson Pro";font-weight:700;font-display:swap;src:url("fonts/crimson-pro-latin-700-normal.woff2") format("woff2")}
+
+/* ---------- part 1: colours and fonts ---------- */
+:root:not([data-skin]){
+  /* the page */
+  --paper:#ecdfbf;   --panel:#f7eed8;   --panel2:#fbf5e6;   --sunk:#fffaf0;
+  --ink:#2b1d14;     --ink2:#5e4a37;    --ink3:#8a745b;
+  --line:rgba(88,24,13,.17);  --line2:rgba(88,24,13,.36);  --edge:#9c2b1b;
+  /* the top band: tooled leather and gold */
+  --band:#2a1a12;    --band-ink:#f3e6c8;  --band-ink2:#d4a94f;
+  /* the one colour that means "do this" */
+  --accent:#7a1f12;  --accent-ink:#fbf1dc;
+  /* our own extras */
+  --title:#58180d;   --gold:#c9a24f;    --leather2:#3a2418;
+  /* verdict tones (chips and dice tags) */
+  --ok:#3f6b2f;  --warn:#94650c;  --bad:#a42a1c;  --info:#2f5a86;
+  --ok-soft:rgba(63,107,47,.1);  --warn-soft:rgba(148,101,12,.1);  --bad-soft:rgba(164,42,28,.09);  --info-soft:rgba(47,90,134,.09);
+  --green:var(--ok);  --red:var(--bad);  --amber:var(--warn);  --blue:var(--info);
+  /* type */
+  --f-display:"Cinzel","Trajan Pro",Georgia,serif;
+  --f-body:"Crimson Pro",Georgia,"Times New Roman",serif;
+  --f-mono:"Cascadia Mono",ui-monospace,Consolas,monospace;
+  /* a slab's raised edge */
+  --lit:inset 0 1px 0 rgba(255,255,255,.7),0 1px 0 rgba(88,24,13,.08),0 10px 24px -16px rgba(60,30,10,.55);
+  color-scheme:light;
+}
+
+/* ---------- part 2: the core screens, dressed ---------- */
+:root:not([data-skin]){
+
+/* the page itself: warm parchment, darker at the edges */
+body{font-size:16.5px;line-height:1.45;background:
+  radial-gradient(ellipse at 50% 0%,rgba(255,250,235,.75),transparent 60%),
+  radial-gradient(ellipse at 50% 120%,rgba(120,70,30,.22),transparent 55%),
+  var(--paper);background-attachment:fixed}
+body::before{background:radial-gradient(ellipse at center,transparent 55%,rgba(80,45,15,.18));z-index:0}
+::selection{background:rgba(156,43,27,.22)}
+*{scrollbar-color:rgba(88,24,13,.35) transparent}
+a{color:var(--accent)}
+
+/* headings: oxblood capitals */
+h1,h2,h3{font-family:var(--f-display);font-weight:700;font-stretch:normal;letter-spacing:.03em;color:var(--title)}
+.label{font-family:var(--f-display);font-weight:600;font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2)}
+.need{color:var(--accent)}
+
+/* the top band */
+.top{background:linear-gradient(180deg,var(--leather2),var(--band));border-bottom:1px solid #120b07;
+  box-shadow:0 1px 0 var(--gold),0 3px 0 #120b07,0 4px 0 rgba(201,162,79,.45),0 10px 24px -10px rgba(40,20,5,.6)}
+.mono-mark{background:var(--gold);box-shadow:0 0 0 1px var(--band),0 0 0 2px rgba(201,162,79,.5)}
+.mono-word{font-family:var(--f-display);font-stretch:normal;font-weight:700;letter-spacing:.28em}
+.brand:hover .mono-word{color:var(--gold)}
+.mono-game{font-style:italic;border-left-color:rgba(201,162,79,.4)}
+.top nav button{font-family:var(--f-display);font-weight:600;font-size:12.5px;letter-spacing:.06em}
+.top nav button.on{border-bottom-color:var(--gold)}
+.top nav .campsw{color:var(--band-ink)!important;border-color:rgba(201,162,79,.45)!important}
+.top nav .campsw.on{background:var(--gold);color:var(--band)!important}
+.hostpill{border-color:rgba(201,162,79,.45)!important}
+.hostpill.cur{background:rgba(243,230,200,.1)!important}
+
+/* the big page title, with a red-to-gold rule under it */
+.roster-head{border-bottom:0;padding-bottom:16px;background:linear-gradient(90deg,var(--edge),var(--gold) 45%,transparent) left bottom/100% 2px no-repeat}
+.roster-head h1{font-weight:700;font-stretch:normal;letter-spacing:.02em;font-size:clamp(32px,4.6vw,52px)}
+.roster-head h1 small{font-family:var(--f-body);font-style:italic;font-weight:400;font-size:16px;letter-spacing:0;color:var(--ink2);text-transform:none}
+
+/* buttons */
+.btn{border-radius:3px;background:rgba(255,252,242,.55);font-family:var(--f-body);font-weight:600;font-size:15px}
+.btn:hover{background:rgba(156,43,27,.06);border-color:var(--edge)}
+.btn.primary{background:linear-gradient(180deg,#8d2817,var(--accent));border-color:#5a160c;box-shadow:inset 0 1px 0 rgba(255,220,180,.25)}
+.btn.primary:hover{background:linear-gradient(180deg,#9e2f1c,#88240f)}
+.btn.ghost{background:transparent}
+.btn.sm{font-size:13.5px}
+.btn.danger{border-color:rgba(164,42,28,.45)}
+.icon-btn{border-radius:3px;background:rgba(255,252,242,.55)}
+.seg{border-radius:3px;overflow:hidden}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.chip{border-radius:2px;font-family:var(--f-body);font-weight:600}
+
+/* fields */
+input[type=text],input[type=number],input:not([type]),select,textarea{border-radius:3px;box-shadow:inset 0 1px 2px rgba(88,24,13,.08)}
+input:focus,select:focus,textarea:focus{border-color:var(--edge);box-shadow:0 0 0 3px rgba(156,43,27,.14)}
+:focus-visible{outline:2px solid var(--edge);outline-offset:2px}
+
+/* panels and cards: vellum leaves on the parchment */
+.panel,.card,.camp-card,.hostopt.rec{border-radius:4px}
+.panel-h{border-bottom:0;background:linear-gradient(90deg,var(--gold),rgba(201,162,79,.15)) left bottom/100% 1px no-repeat}
+.panel-h h3{font-size:16px;letter-spacing:.06em}
+.card-top h3,.camp-name{font-size:21px}
+.card-top .sub{font-style:italic;font-size:14.5px}
+.card-stats b{font-family:var(--f-display);font-weight:700;color:var(--title)}
+.card.new,.camp-card.camp-new,.empty{border-radius:4px;border-color:rgba(88,24,13,.3)}
+.card.new:hover,.camp-card.camp-new:hover{border-color:var(--edge);background:rgba(255,252,242,.35)}
+.camp-card.is-open{border-color:var(--gold);box-shadow:var(--lit),0 0 0 1px var(--gold)}
+.portrait{border-radius:50%;font-family:var(--f-display);font-stretch:normal;font-weight:700;box-shadow:inset 0 0 0 2px rgba(255,255,255,.3),0 0 0 1px var(--gold),0 0 0 3px var(--panel),0 0 0 4px rgba(201,162,79,.5)}
+.meter{background:rgba(88,24,13,.1)}
+.meter i{background:linear-gradient(90deg,var(--accent),var(--edge))}
+.banner{border-radius:3px;border-left-color:var(--edge);background:rgba(255,252,242,.45)}
+.campline{border-left-color:var(--gold)}
+
+/* tables: the stat-block look */
+th{font-family:var(--f-display);font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--title);border-bottom:2px solid rgba(88,24,13,.45)}
+tbody tr:nth-child(even) td,table tr:nth-child(even) td{background:rgba(201,162,79,.1)}
+
+/* dice, the tray, toasts and windows */
+.dice-fab{border-radius:3px;background:linear-gradient(180deg,#8d2817,var(--accent));color:var(--accent-ink);font-family:var(--f-display);font-stretch:normal;font-weight:700;letter-spacing:.14em;
+  box-shadow:0 0 0 2px var(--band),0 0 0 3px var(--gold),0 10px 24px -8px rgba(40,20,5,.7)}
+.tray,.modal{border-radius:5px;border-color:rgba(88,24,13,.4);box-shadow:var(--lit),0 30px 60px -20px rgba(40,20,5,.7)}
+.tray-title{font-family:var(--f-display);font-stretch:normal;font-weight:700;font-size:17px;letter-spacing:.06em;color:var(--title)}
+.modal-h{border-bottom:0;background:linear-gradient(90deg,var(--edge),var(--gold) 45%,transparent) left bottom/100% 2px no-repeat}
+.modal-h h2{font-size:21px}
+.rl .tot,.tl .tot{font-family:var(--f-display);font-stretch:normal;font-weight:700;color:var(--title)}
+.rl .tot{font-size:28px}
+.rl .det,.tl .det,.toast .det{font-family:var(--f-body);font-style:italic;font-size:13px}
+.toast{background:linear-gradient(180deg,var(--leather2),var(--band));color:var(--band-ink);border:1px solid var(--gold);border-radius:4px;box-shadow:0 18px 40px -10px rgba(40,20,5,.7)}
+.toast .tot{font-family:var(--f-display);font-stretch:normal;font-weight:700;color:var(--gold)}
+.toast .det{color:var(--band-ink2)}
+.toast .chip.green{color:#a9d98f;background:rgba(169,217,143,.12)} .toast .chip.red{color:#f0937f;background:rgba(240,147,127,.12)}
+.toast .chip.amber{color:#f0c96a;background:rgba(240,201,106,.12)} .toast .chip.blue{color:#9cc3ee;background:rgba(156,195,238,.12)}
+.toast .chip.ink{color:var(--band-ink2)}
+.scrim{background:rgba(42,26,18,.6);backdrop-filter:blur(2px)}
+.delcard{border-radius:4px}
+.delname{font-family:var(--f-display);font-stretch:normal;font-weight:700;color:var(--title)}
+body.dropping::after{background:rgba(42,26,18,.9);color:var(--band-ink);border-color:var(--gold);font-family:var(--f-display);font-stretch:normal;font-weight:700}
+.camp-switching{background:rgba(236,223,191,.95)}
+.camp-switching b{font-family:var(--f-display);font-stretch:normal;font-weight:700;color:var(--title)}
+.boot-fail{border-radius:4px}
+
+/* the map table: a dark board, leather tools, parchment side panel */
+.mapwrap{background:#1a120c}
+.map-tools{background:linear-gradient(90deg,var(--band),var(--leather2));border-right:1px solid var(--gold)}
+.mtool{color:var(--band-ink2);border-radius:3px}
+.mtool:hover{color:var(--band-ink);border-color:rgba(201,162,79,.45)}
+.mtool.on{background:var(--gold);color:var(--band)}
+.mtool-sep{background:rgba(201,162,79,.3)}
+.map-sub{background:var(--panel);border-radius:4px;box-shadow:var(--lit)}
+.map-hud{color:rgba(243,230,200,.6)}
+.map-empty h3{color:var(--band-ink);font-weight:700;font-stretch:normal}
+.map-empty p{color:var(--band-ink2)}
+.map-empty .btn:not(.primary){background:var(--panel)}
+.map-banner{border-radius:3px}
+.map-side{border-left:1px solid var(--gold)}
+.map-resize::after{background:var(--gold)}
+.ms h3{font-size:14px;letter-spacing:.07em}
+.mi.on,.tk.on{background:var(--panel2)}
+.tlog{border-radius:3px}
+}
+
+/* ---------- part 3: the character sheet (classes from sheet.js, all starting dnd-) ---------- */
+:root:not([data-skin]){
+.dnd-small{font-size:13px}
+.dnd-head{align-items:flex-end}
+.dnd-headtools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.dnd-headtools .seg button{font-size:13px}
+
+/* tabs: bookmarks along the top of the page */
+.dnd-tabs{display:flex;gap:4px;border-bottom:1px solid var(--line2);margin:-6px 0 18px;flex-wrap:wrap}
+.dnd-tabs button{font-family:var(--f-display);font-weight:700;font-size:13px;letter-spacing:.07em;padding:9px 18px 8px;background:transparent;border:1px solid transparent;border-bottom:0;border-radius:5px 5px 0 0;color:var(--ink2);margin-bottom:-1px}
+.dnd-tabs button:hover{color:var(--title)}
+.dnd-tabs button.on{background:var(--panel);border-color:var(--line2);color:var(--title);box-shadow:inset 0 2px 0 var(--gold)}
+
+/* the three columns of the Sheet tab */
+.dnd-grid{display:grid;grid-template-columns:290px minmax(0,1fr) minmax(0,1.15fr);gap:16px;align-items:start}
+.dnd-col{display:grid;gap:16px;min-width:0}
+@media (max-width:1180px){.dnd-grid{grid-template-columns:290px minmax(0,1fr)}.dnd-grid>.dnd-col:last-child{grid-column:1/-1}}
+@media (max-width:760px){.dnd-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* ability scores */
+.dnd-abs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dnd-ab{display:grid;justify-items:center;gap:2px;padding:10px 8px 9px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--lit);text-align:center}
+.dnd-ab .label{font-size:10px}
+.dnd-mod{font-family:var(--f-display);font-weight:700;font-size:32px;line-height:1.1;color:var(--title);background:none;border:0;padding:0 8px;border-radius:4px}
+.dnd-mod:hover{color:var(--edge);background:rgba(156,43,27,.06)}
+.dnd-ab input{width:58px;text-align:center;padding:3px 4px;font-size:15px;border-radius:999px;font-weight:600}
+
+/* saves and skills */
+.dnd-list{display:grid;padding:6px 16px 12px}
+.dnd-li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:4px 0;border-bottom:1px dotted var(--line2)}
+.dnd-li:last-of-type{border-bottom:0}
+.dnd-li-n{min-width:0}
+.dnd-abbr{font-size:11px;letter-spacing:.06em;margin-left:4px}
+.dnd-pip{width:14px;height:14px;flex:none;padding:0;border-radius:50%;border:1.5px solid var(--title);background:transparent;display:inline-block;vertical-align:middle;cursor:pointer}
+.dnd-pip.on{background:var(--title)}
+.dnd-pip.exp{background:var(--gold);border-color:var(--title);border-radius:2px;transform:rotate(45deg) scale(.9);box-shadow:inset 0 0 0 2px var(--panel)}
+.dnd-pip:hover{border-color:var(--edge)}
+.dnd-roll{font-family:var(--f-display);font-weight:700;font-size:15px;color:var(--title);min-width:46px;padding:3px 8px;border:1px solid var(--line2);border-radius:4px;background:rgba(255,252,242,.65)}
+.dnd-roll:hover{border-color:var(--edge);background:rgba(156,43,27,.07)}
+.dnd-legend{margin:8px 0 0;font-size:12.5px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.dnd-legend .dnd-pip{cursor:default;width:11px;height:11px}
+.dnd-passives{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+.dnd-passives div{display:grid;justify-items:center;gap:2px;padding:10px 6px;text-align:center;border-right:1px solid var(--line)}
+.dnd-passives div:last-child{border-right:0}
+.dnd-passives b{font-family:var(--f-display);font-size:22px;color:var(--title)}
+.dnd-passives .label{font-size:9.5px}
+
+/* the stat tiles: AC, initiative, speed, proficiency */
+.dnd-tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:560px){.dnd-tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dnd-tile{display:grid;justify-items:center;align-content:center;gap:4px;padding:10px 8px;min-height:86px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--lit);text-align:center;min-width:0}
+.dnd-tile .label{font-size:10px}
+.dnd-tile select{font-size:13.5px;width:100%;padding:5px 6px}
+.dnd-tile-note{font-size:11.5px;color:var(--bad)}
+.dnd-big{font-family:var(--f-display);font-weight:700;font-size:27px;line-height:1.1;color:var(--title)}
+.dnd-big small{font-size:13px;color:var(--ink2)}
+input.dnd-big{width:76px;text-align:center;padding:1px 4px;font-size:25px}
+button.dnd-big{font-size:25px;padding:0 12px}
+
+/* hit points */
+.dnd-hprow{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.dnd-hpnow{display:flex;align-items:baseline;gap:8px}
+.dnd-hpnow input{width:112px;font-family:var(--f-display);font-weight:700;font-size:40px;line-height:1;color:var(--title);text-align:center;padding:2px 6px}
+.dnd-of{font-family:var(--f-display);font-weight:600;font-size:22px;color:var(--ink2)}
+.dnd-temp input{width:92px}
+.dnd-hpbar{height:8px;border-radius:4px;overflow:hidden;background:rgba(88,24,13,.1)}
+.dnd-hpbar i{background:linear-gradient(90deg,#4f8a3a,var(--ok))}
+.dnd-hp.mid .dnd-hpbar i{background:linear-gradient(90deg,#b07a1a,var(--warn))}
+.dnd-hp.low .dnd-hpbar i,.dnd-hp.down .dnd-hpbar i{background:linear-gradient(90deg,var(--accent),var(--bad))}
+.dnd-hp.down,.dnd-hp.dead{border-color:var(--bad);box-shadow:var(--lit),0 0 0 1px rgba(164,42,28,.35)}
+.dnd-dmg{flex-wrap:nowrap}
+.dnd-dmg input{width:110px;flex:none}
+.dnd-hd{justify-content:space-between}
+.dnd-hd b{font-family:var(--f-display);font-size:18px;color:var(--title)}
+.dnd-death{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 12px;border:1px dashed var(--line2);border-radius:5px}
+.dnd-death.now{border-color:var(--bad);background:var(--bad-soft)}
+.dnd-death>.label{width:100%}
+.dnd-death .btn{margin-left:auto}
+.dnd-fails .dnd-pip{border-color:var(--bad)}
+.dnd-fails .dnd-pip.on{background:var(--bad)}
+
+/* conditions */
+.dnd-conds{display:flex;flex-wrap:wrap;gap:6px}
+.dnd-cond{cursor:pointer;padding:3px 10px;font-size:13.5px;border-radius:999px}
+.dnd-cond.ink{background:transparent;color:var(--ink3);border-color:var(--line2)}
+.dnd-cond.ink:hover{color:var(--ink);border-color:var(--edge)}
+.dnd-cond:disabled{cursor:default}
+.dnd-exh{min-width:20px;text-align:center;font-family:var(--f-display);font-size:16px}
+.dnd-exh.on{color:var(--bad)}
+
+/* weapons and attacks */
+.dnd-attacks{margin-top:16px}
+.dnd-atk{padding:9px 0;border-bottom:1px solid var(--line)}
+.dnd-atk:last-child{border-bottom:0}
+.dnd-atk-main{display:grid;grid-template-columns:minmax(0,1fr) auto auto auto auto;gap:8px;align-items:center}
+.dnd-atk-name{display:grid;min-width:0}
+.dnd-atk-name b{font-size:17px}
+.dnd-atk-name span{font-style:italic;font-size:14px}
+.dnd-hit{font-family:var(--f-display);font-weight:700;color:var(--title)}
+.dnd-atk-edit{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:12px;margin-top:9px;background:rgba(201,162,79,.09);border:1px solid var(--line);border-radius:5px}
+.dnd-atk-edit .dnd-wide{grid-column:span 3}
+@media (max-width:760px){.dnd-atk-main{grid-template-columns:minmax(0,1fr) auto auto}.dnd-atk-name{grid-column:1/-1}.dnd-atk-edit{grid-template-columns:repeat(2,minmax(0,1fr))}.dnd-atk-edit .dnd-wide{grid-column:1/-1}}
+
+/* spells */
+.dnd-spelltop{margin-bottom:16px}
+.dnd-spellgrid{display:grid;grid-template-columns:minmax(0,360px) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.dnd-spellgrid{grid-template-columns:minmax(0,1fr)}}
+.dnd-slot{display:grid;grid-template-columns:86px minmax(0,1fr) auto;gap:10px;align-items:center}
+.dnd-slot .dnd-pip{width:16px;height:16px}
+.dnd-sph{font-size:14px;letter-spacing:.08em;margin:16px 0 6px;padding-bottom:5px;background:linear-gradient(90deg,var(--gold),transparent) left bottom/100% 1px no-repeat}
+.dnd-spgroup:first-child .dnd-sph{margin-top:0}
+.dnd-spell{display:grid;grid-template-columns:24px minmax(0,1fr) minmax(0,1.6fr) auto 30px;gap:8px;align-items:center;padding:3px 0}
+.dnd-prep{display:grid;place-items:center}
+.dnd-prep input{width:16px;height:16px;accent-color:var(--accent)}
+input.dnd-spname{font-weight:600}
+.dnd-addspell{margin-top:16px;flex-wrap:nowrap}
+.dnd-addspell input{flex:1}
+@media (max-width:640px){.dnd-spell{grid-template-columns:24px minmax(0,1fr) auto 30px}.dnd-spell>input:nth-of-type(2){grid-column:2/-1;grid-row:2}}
+
+/* inventory */
+.dnd-coins{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+@media (max-width:640px){.dnd-coins{grid-template-columns:repeat(3,minmax(0,1fr))}}
+table.dnd-inv td{padding:4px 6px}
+table.dnd-inv input{padding:6px 8px}
+.dnd-n{width:96px}
+
+/* details */
+.dnd-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.dnd-span{grid-column:1/-1}
+.dnd-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.dnd-form .dnd-wide{grid-column:1/-1}
+.dnd-areas textarea{min-height:140px}
+@media (max-width:860px){.dnd-details,.dnd-form{grid-template-columns:minmax(0,1fr)}}
+
+/* big numbers don't need spinner arrows */
+.dnd-hpnow input::-webkit-inner-spin-button,input.dnd-big::-webkit-inner-spin-button,.dnd-ab input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+
+/* the GM's party table and the panel beside the map */
+.dnd-party td{vertical-align:middle}
+.dnd-hpcell{min-width:130px}
+.dnd-hpcell .meter{margin-top:5px;height:4px;border-radius:2px;overflow:hidden}
+.dnd-minihp{font-family:var(--f-display);font-size:26px;color:var(--title)}
+.dnd-mini .dnd-dmg input{width:90px}
+}
+
+/* ---------- part 4: the character creator (builder.js, classes starting dnd-b- and dnd-steps) ---------- */
+:root:not([data-skin]){
+.dnd-steps{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;margin:-6px 0 22px;border:1px solid var(--line2);border-radius:6px;overflow:hidden;background:var(--panel);box-shadow:var(--lit)}
+.dnd-steps button{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 8px;background:transparent;border:0;border-right:1px solid var(--line);font-family:var(--f-display);font-weight:700;font-size:12.5px;letter-spacing:.06em;color:var(--ink2);min-width:0}
+.dnd-steps button:last-child{border-right:0}
+.dnd-steps button span:nth-child(2){white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dnd-steps button:hover{color:var(--title);background:rgba(201,162,79,.08)}
+.dnd-steps button.on{background:linear-gradient(180deg,#8d2817,var(--accent));color:var(--accent-ink)}
+.dnd-stepn{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;border:1.5px solid currentColor;font-size:11px}
+.dnd-steps button.done .dnd-stepn{background:var(--ok);border-color:var(--ok);color:#fff}
+.dnd-steps button.on.done .dnd-stepn{background:var(--gold);border-color:var(--gold);color:var(--band)}
+.dnd-badge{flex:none;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-family:var(--f-body);font-size:11px;font-weight:700;display:grid;place-items:center;letter-spacing:0}
+.dnd-steps button.on .dnd-badge{background:var(--gold);color:var(--band)}
+@media (max-width:860px){.dnd-steps{grid-template-columns:repeat(3,minmax(0,1fr))}.dnd-steps button:nth-child(3){border-right:0}.dnd-steps button:nth-child(-n+3){border-bottom:1px solid var(--line)}}
+@media (max-width:520px){.dnd-steps{grid-template-columns:repeat(2,minmax(0,1fr))}.dnd-steps button{border-bottom:1px solid var(--line)}.dnd-steps button:nth-child(odd){border-right:1px solid var(--line)}.dnd-steps button:nth-child(even){border-right:0}.dnd-steps button:nth-last-child(-n+2){border-bottom:0}}
+
+.dnd-b-lead{margin:0 0 16px;max-width:72ch;font-size:17px;color:var(--ink2)}
+.dnd-b-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.dnd-b-card{display:flex;gap:14px;align-items:flex-start;text-align:left;padding:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--lit);color:var(--ink);transition:border-color .12s,transform .12s}
+.dnd-b-card:hover{border-color:var(--edge);transform:translateY(-1px)}
+.dnd-b-card.on{border-color:var(--gold);box-shadow:var(--lit),0 0 0 1px var(--gold)}
+.dnd-b-card-t{display:grid;gap:3px;min-width:0}
+.dnd-b-card b{font-family:var(--f-display);font-size:18px;color:var(--title);letter-spacing:.02em}
+.dnd-b-meta{font-size:13px;color:var(--ink2);font-style:italic}
+.dnd-b-blurb{font-size:14.5px;line-height:1.35}
+.dnd-emblem{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;font-family:var(--f-display);font-weight:700;font-size:20px;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.3),0 0 0 1px var(--gold),0 0 0 3px var(--panel),0 0 0 4px rgba(201,162,79,.5)}
+.dnd-emblem.lg{width:60px;height:60px;font-size:28px}
+
+.dnd-b-chosen{display:flex;gap:18px;align-items:center;padding:16px 18px;margin-bottom:16px;background:var(--panel);border:1px solid var(--gold);border-radius:8px;box-shadow:var(--lit)}
+.dnd-b-chosen h2{font-size:26px}
+.dnd-b-chosen p{margin:4px 0 0;max-width:70ch}
+.dnd-b-chosen .btn{margin-left:auto;flex:none}
+.dnd-b-cols{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.dnd-b-cols{grid-template-columns:minmax(0,1fr)}}
+
+.dnd-b-choice{padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:6px}
+.dnd-b-choice.open{border-left-color:var(--bad)}
+.dnd-b-choice.done{border-left-color:var(--ok)}
+.dnd-b-choice-h{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+.dnd-b-choice-h h3{font-size:15px;letter-spacing:.05em}
+.dnd-chips{display:flex;flex-wrap:wrap;gap:6px}
+.dnd-chip{display:inline-block;padding:6px 12px;border:1px solid var(--line2);border-radius:999px;background:rgba(255,252,242,.6);font-size:14.5px;line-height:1.15;text-align:left}
+.dnd-chip small{display:block;font-size:11px;color:var(--ink3);font-style:italic}
+.dnd-chip:hover:not(:disabled){border-color:var(--edge)}
+.dnd-chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.dnd-chip.on::before{content:"✓ "}
+.dnd-chip:disabled{opacity:.55;cursor:not-allowed}
+.dnd-feats{display:grid;gap:10px}
+.dnd-feat{display:grid;gap:2px;padding-bottom:10px;border-bottom:1px dotted var(--line2)}
+.dnd-feat:last-child{border-bottom:0;padding-bottom:0}
+.dnd-feat b{font-family:var(--f-display);font-size:14.5px;color:var(--title);letter-spacing:.03em}
+.dnd-feat span{font-size:15px}
+.dnd-facts{margin:0;display:grid;gap:10px}
+.dnd-facts div{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px}
+.dnd-facts dt{font-family:var(--f-display);font-weight:700;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);padding-top:3px}
+.dnd-facts dd{margin:0}
+
+.dnd-b-abs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+@media (max-width:980px){.dnd-b-abs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:520px){.dnd-b-abs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dnd-b-ab{display:grid;justify-items:center;gap:6px;padding:14px 10px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--lit);text-align:center}
+.dnd-b-ab.empty{border-style:dashed}
+.dnd-b-tot{font-family:var(--f-display);font-size:38px;line-height:1;color:var(--title)}
+.dnd-b-mod{font-family:var(--f-display);font-weight:700;font-size:15px;color:var(--ink2);min-height:18px}
+.dnd-b-ab select,.dnd-b-ab input{width:90px;text-align:center}
+.dnd-pb b{font-size:18px;min-width:26px}
+.dnd-rolls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.dnd-rollchip{display:inline-flex;gap:8px;align-items:baseline;padding:5px 12px;border:1px solid var(--line2);border-radius:999px;background:var(--panel)}
+.dnd-rollchip b{font-family:var(--f-display);font-size:18px;color:var(--title)}
+.dnd-rollchip s{opacity:.6}
+
+.dnd-wpn{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dotted var(--line2)}
+.dnd-wpn:last-child{border-bottom:0}
+.dnd-wpn.noprof b{color:var(--ink3)}
+.dnd-wpnlist{max-height:720px;overflow-y:auto}
+
+.dnd-b-revhead{display:flex;gap:14px;align-items:center}
+.dnd-b-revhead h2{font-size:24px}
+.dnd-b-revabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border:1px solid var(--line);border-radius:6px}
+.dnd-b-revabs div{display:grid;justify-items:center;padding:8px 4px;border-right:1px solid var(--line)}
+.dnd-b-revabs div:last-child{border-right:0}
+.dnd-b-revabs b{font-family:var(--f-display);font-size:20px;color:var(--title)}
+.dnd-b-revabs .faint{font-size:12.5px}
+.dnd-finish{width:100%;padding:12px;font-size:16px}
+.dnd-b-nav{display:flex;justify-content:space-between;margin-top:22px;padding-top:16px;border-top:1px solid var(--line)}
+}
