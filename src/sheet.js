@@ -233,13 +233,15 @@ function dndSpellsTab(c, k) {
     slotRows.push(`<div class="dnd-slot"><span class="label">Pact (${dndOrdinal(k.pact[1])})</span><span class="row" style="gap:5px">${Array.from({ length: k.pact[0] }, (_, i) => dndPip(i < k.pact[0] - used, "dnd-slot", `data-l="pact" data-i="${i}"`, `Pact slot ${i + 1}`)).join("")}</span><span class="faint dnd-small">${k.pact[0] - used} of ${k.pact[0]} · back on a short rest</span></div>`); }
   const groups = DND_SPELL_LEVELS.map((title, l) => {
     const list = c.spells.map((s, i) => [s, i]).filter(([s]) => s.lvl === l); if (!list.length) return "";
-    return `<div class="dnd-spgroup"><h3 class="dnd-sph">${title}</h3>${list.map(([s, i]) => `<div class="dnd-spell">
+    return `<div class="dnd-spgroup"><h3 class="dnd-sph">${title}</h3>${list.map(([s, i]) => { const ex = dndSpellExtras(c, s, i, k); return `<div class="dnd-spwrap"><div class="dnd-spell">
         ${l ? `<label class="dnd-prep" title="Prepared"><input type="checkbox" data-dnd="spells.${i}.prep" ${s.prep ? "checked" : ""} ${dndDis(c)} aria-label="Prepared"></label>` : `<span class="dnd-prep"></span>`}
         ${dndText(c, `spells.${i}.name`, s.name, `placeholder="Spell name" aria-label="Spell name" class="dnd-spname"`)}
         ${dndText(c, `spells.${i}.notes`, s.notes, `placeholder="Casting time · range · effect" aria-label="Notes"`)}
-        ${l ? `<button class="btn sm" data-act="dnd-cast" data-i="${i}" ${dndDis(c)} title="Spend a spell slot">Cast</button>` : `<span></span>`}
-        ${dndCanEdit(c) ? `<button class="icon-btn" data-act="dnd-del" data-l="spells" data-i="${i}" aria-label="Remove ${esc(s.name || "spell")}">×</button>` : ""}
-      </div>`).join("")}</div>`; }).join("");
+        <span class="row dnd-spbtns">${ex.btns}${l ? `<button class="btn sm" data-act="dnd-cast" data-i="${i}" ${dndDis(c)} title="Spend a spell slot">Cast</button>` : ""}</span>
+        ${dndCanEdit(c) ? `<button class="icon-btn" data-act="dnd-del" data-l="spells" data-i="${i}" aria-label="Remove ${esc(s.name || "spell")}">×</button>` : "<span></span>"}
+      </div>${ex.body}</div>`; }).join("")}</div>`; }).join("");
+  const tbl = Object.fromEntries(typeof dndTableAt === "function" ? dndTableAt(c, c.level) : []);
+  const cantrips = c.spells.filter(s => s.lvl === 0).length, prepared = c.spells.filter(s => s.lvl && s.prep).length;
   return `<div class="dnd-spelltop">
       <div class="dnd-tiles">
         ${dndTile("Spellcasting", `<select data-dnd="spellAb" aria-label="Spellcasting ability" ${dndDis(c)}><option value="">${k.spellAb ? DND_AB_NAME[k.spellAb] + " (class)" : "None"}</option>${DND_ABILITIES.map(([a, n]) => `<option value="${a}" ${c.spellAb === a ? "selected" : ""}>${n}</option>`).join("")}</select>`)}
@@ -252,11 +254,14 @@ function dndSpellsTab(c, k) {
       <section class="panel"><div class="panel-h"><h3>Spell slots</h3>${slotRows.length ? `<button class="btn sm ghost" data-act="dnd-slotsreset" ${dndDis(c)}>Restore all</button>` : ""}</div>
         <div class="panel-b" style="display:grid;gap:10px">${slotRows.join("") || `<p class="faint" style="margin:0">No spell slots at this level. Pick your class on the Details tab, or set a caster type above.</p>`}
         <p class="faint dnd-small" style="margin:0">Lit dots are slots you still have. Click one to spend or restore it, or use Cast on a spell.</p></div></section>
-      <section class="panel"><div class="panel-h"><h3>Spells</h3><span class="faint dnd-small">${c.spells.filter(s => s.lvl && s.prep).length} prepared</span></div>
+      <section class="panel"><div class="panel-h"><h3>Spells</h3><span class="row" style="gap:6px">
+          ${tbl.Cantrips != null ? `<span class="chip ${cantrips > tbl.Cantrips ? "red" : cantrips === tbl.Cantrips ? "green" : "ink"}">Cantrips ${cantrips} / ${tbl.Cantrips}</span>` : ""}
+          <span class="chip ${tbl["Prepared Spells"] != null && prepared > tbl["Prepared Spells"] ? "red" : tbl["Prepared Spells"] != null && prepared === tbl["Prepared Spells"] ? "green" : "ink"}">Prepared ${prepared}${tbl["Prepared Spells"] != null ? " / " + tbl["Prepared Spells"] : ""}</span>
+          ${dndCanEdit(c) ? `<button class="btn sm primary" data-act="dnd-pickspells">+ Add from the spell list</button>` : ""}</span></div>
         <div class="panel-b">${groups || `<p class="faint" style="margin:0 0 12px">No spells yet.</p>`}
           ${dndCanEdit(c) ? `<div class="row dnd-addspell">
             <select id="dnd-newlvl" aria-label="Spell level">${DND_SPELL_LEVELS.map((t, l) => `<option value="${l}">${l ? dndOrdinal(l) : "Cantrip"}</option>`).join("")}</select>
-            <input id="dnd-newspell" placeholder="Add a spell, e.g. Magic Missile" aria-label="New spell name">
+            <input id="dnd-newspell" placeholder="Or type a spell from another book" aria-label="New spell name">
             <button class="btn sm primary" data-act="dnd-addspell">Add</button></div>` : ""}
         </div></section>
     </div>`;
@@ -265,17 +270,20 @@ function dndSpellsTab(c, k) {
 /* ----- Inventory tab ----- */
 function dndInvTab(c, k) {
   const coins = [["cp", "Copper"], ["sp", "Silver"], ["ep", "Electrum"], ["gp", "Gold"], ["pp", "Platinum"]];
-  const rows = c.inv.map((it, i) => `<tr>
-      <td>${dndText(c, `inv.${i}.name`, it.name, `placeholder="Item" aria-label="Item name"`)}</td>
+  const rows = c.inv.map((it, i) => { const ref = dndItemRef(it.name); const open = ref && ui.dndItOpen[c.id + ":" + it.id]; return `<tr>
+      <td><div class="row" style="gap:6px;flex-wrap:nowrap">${dndText(c, `inv.${i}.name`, it.name, `placeholder="Item" aria-label="Item name"`)}
+        ${ref ? `<button class="icon-btn dnd-info ${open ? "on" : ""}" data-act="dnd-itinfo" data-id="${esc(it.id)}" aria-label="About ${esc(ref.n)}">i</button>` : ""}
+        ${ref && ref.arm && dndCanEdit(c) ? `<button class="btn sm ghost" data-act="dnd-wear" data-i="${i}" title="Set your Armor Class from this">Wear</button>` : ""}</div>
+        ${open ? `<div class="dnd-itdetail"><span class="faint dnd-small">${esc([ref.cat, ref.rar, ref.att ? "requires attunement" : "", ref.cost, ref.wt ? ref.wt + " lb" : ""].filter(Boolean).join(" · "))}</span><div class="dnd-ftext">${dndParas(ref.t || "")}</div></div>` : ""}</td>
       <td class="dnd-n">${dndNum(c, `inv.${i}.qty`, it.qty, `min="0" aria-label="Quantity"`)}</td>
       <td class="dnd-n"><input type="number" step="0.1" min="0" data-dnd="inv.${i}.wt" value="${it.wt || ""}" placeholder="0" aria-label="Weight each" ${dndDis(c)}></td>
       <td>${dndText(c, `inv.${i}.notes`, it.notes, `placeholder="Notes" aria-label="Notes"`)}</td>
-      <td>${dndCanEdit(c) ? `<button class="icon-btn" data-act="dnd-del" data-l="inv" data-i="${i}" aria-label="Remove ${esc(it.name || "item")}">×</button>` : ""}</td></tr>`).join("");
+      <td>${dndCanEdit(c) ? `<button class="icon-btn" data-act="dnd-del" data-l="inv" data-i="${i}" aria-label="Remove ${esc(it.name || "item")}">×</button>` : ""}</td></tr>`; }).join("");
   const over = k.weight > k.carry;
   return `<section class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Coins</h3><span class="faint dnd-small">${(c.coins.cp / 100 + c.coins.sp / 10 + c.coins.ep / 2 + c.coins.gp + c.coins.pp * 10).toFixed(2).replace(/\.00$/, "")} gp in all</span></div>
       <div class="panel-b dnd-coins">${coins.map(([kk, l]) => `<div class="field"><label class="label">${l} (${kk.toUpperCase()})</label>${dndNum(c, `coins.${kk}`, c.coins[kk] || "", `min="0" placeholder="0"`)}</div>`).join("")}</div></section>
     <section class="panel"><div class="panel-h"><h3>Equipment</h3>
-        <span class="row dnd-small" style="gap:10px"><span class="${over ? "chip red" : "faint"}">${k.weight} / ${k.carry} lb carried</span>${dndCanEdit(c) ? `<button class="btn sm" data-act="dnd-additem">+ Add item</button>` : ""}</span></div>
+        <span class="row dnd-small" style="gap:10px"><span class="${over ? "chip red" : "faint"}">${k.weight} / ${k.carry} lb carried</span>${dndCanEdit(c) ? `<button class="btn sm primary" data-act="dnd-pickitems">+ Add from the equipment list</button><button class="btn sm" data-act="dnd-additem">+ Write one in</button>` : ""}</span></div>
       <div class="tbl-wrap"><table class="dnd-inv"><thead><tr><th>Item</th><th>Qty</th><th>Weight (lb)</th><th>Notes</th><th></th></tr></thead>
         <tbody>${rows || `<tr><td colspan="5" class="faint">Nothing carried yet.</td></tr>`}</tbody></table></div>
       ${over ? `<p class="dnd-small" style="margin:0;padding:0 16px 14px;color:var(--bad)">Over your carrying capacity (Strength × 15). Your speed drops to 5 ft.</p>` : ""}

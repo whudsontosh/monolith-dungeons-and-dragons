@@ -14,6 +14,8 @@ installs it from **More games** and keeps it up to date.
 | `src/rules.js` | The rules: abilities, skills, classes, proficiency, spell slots, and every number the sheet works out |
 | `src/data.js` | What the creator offers: class details, backgrounds, species, origin feats, weapons and armor |
 | `src/classdata.js` | Every class's features for levels 1 to 20, class tables, subclasses, feature choices and feats (generated; see below) |
+| `src/catalog.js` | Every SRD spell, the equipment and magic items, and the starting equipment kits (generated) |
+| `src/catalogs.js` | The spell and equipment pickers, spell rolls, Wear for armor, and the creator's kits |
 | `src/sheet.js` | The character sheet (Sheet, Spells, Inventory and Details tabs) and the panel beside the map |
 | `src/builder.js` | The character creator: Class, Background, Species, Abilities, Equipment, Name & finish |
 | `src/levelup.js` | The sheet's Features tab and the Level up dialog |
@@ -47,8 +49,10 @@ repository for the full set-up.
 ```sh
 git clone --depth 1 --filter=blob:none --sparse https://github.com/foundryvtt/dnd5e.git ../fvtt
 (cd ../fvtt && git sparse-checkout set packs/_source)
-python3 scripts/srd-extract.py ../fvtt/packs/_source classes.json   # writes classes.json inside that folder
-python3 scripts/srd-classdata.py ../fvtt/packs/_source/classes.json src/classdata.js
+python3 scripts/srd-extract.py ../fvtt/packs/_source classes.json
+python3 scripts/srd-classdata.py classes.json src/classdata.js
+python3 scripts/srd-catalog.py ../fvtt/packs/_source catalog.json      # spells, equipment, kits
+python3 scripts/srd-catalogjs.py catalog.json src/catalog.js
 ```
 
 The extractor drops Foundry's own notes about its app, keeping only the rules text.

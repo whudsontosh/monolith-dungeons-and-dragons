@@ -2,7 +2,7 @@
   "format": "monolith-game",
   "id": "dnd",
   "name": "Dungeons and Dragons",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "api": 1,
   "minMonolith": "1.0.0",
   "tagline": "Beta Build.",

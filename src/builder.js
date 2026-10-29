@@ -14,7 +14,7 @@ function dndNewBuild() {
     bg: "", cAbs: [], cSkills: [], cFeat: "", cTool: "", bgMode: "21", plus2: "", plus1: "",
     species: "", lineage: "", keen: "", skillful: "", versatile: "", skilled: [],
     method: "array", arr: {}, pb: { str: 8, dex: 8, con: 8, int: 8, wis: 8, cha: 8 }, rolls: [], man: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
-    choices: {}, armor: "", shield: false, weapons: [], gear: "", gp: 0,
+    choices: {}, kitCls: -1, kitBg: -1, armor: "", shield: false, weapons: [], gear: "", gp: 0,
     name: "", alignment: "", player: "", appearance: "", notes: "", color: "" };
 }
 function dndB(c) { const b = { ...dndNewBuild(), ...(c.build || {}) }; c.build = b; return b; }
@@ -272,7 +272,12 @@ function dndStepEquip(c, b) {
         : `<button class="btn sm" data-act="dnd-b-wpn" data-v="${esc(w[0])}" data-d="1">Add</button>`}</div>`; };
   const chosen = [...new Set(b.weapons)].map(n => DND_WEAPONS.find(w => w[0] === n)).filter(Boolean);
   const groups = [["simple", "melee", "Simple melee"], ["simple", "ranged", "Simple ranged"], ["martial", "melee", "Martial melee"], ["martial", "ranged", "Martial ranged"]];
-  return `<p class="dnd-b-lead">Pick the armor and weapons from your class and background's starting equipment (or what you buy with your starting gold). The sheet makes an attack for each weapon.</p>
+  const kitBlock = (kind, name, key) => { const opts = (DND_KITS[kind] || {})[name] || []; if (!opts.length) return "";
+    return `<section class="dnd-b-choice ${b[key] >= 0 ? "done" : ""}"><div class="dnd-b-choice-h"><h3>${esc(name)} starting equipment</h3>${b[key] >= 0 ? `<span class="chip green">Option ${"ABC"[b[key]]}</span>` : ""}</div>
+      <div class="dnd-kits">${opts.map((o, i) => `<button class="dnd-kit ${b[key] === i ? "on" : ""}" data-act="dnd-b-kit" data-k="${key}" data-v="${i}"><b>Option ${"ABC"[i]}</b><span>${esc(dndKitText(o))}</span></button>`).join("")}</div></section>`; };
+  const kits = [b.cls ? kitBlock("class", b.cls, "kitCls") : "", b.bg && b.bg !== "Custom" ? kitBlock("bg", b.bg, "kitBg") : ""].join("");
+  return `<p class="dnd-b-lead">Take your class's and background's starting equipment, or the gold to buy your own. Picking an option fills in the armor, weapons, gear and gold below, and you can change any of it.</p>
+    ${kits ? `<div class="dnd-b-kits">${kits}</div>` : ""}
     <div class="dnd-b-cols">
       <div style="display:grid;gap:14px;align-content:start">
         <section class="dnd-b-choice"><div class="dnd-b-choice-h"><h3>Armor</h3><span class="chip ink">AC ${ac}</span></div>
@@ -342,11 +347,12 @@ function dndFinishBuild(c) {
   // equipment
   const ar = DND_ARMOR.find(x => x[0] === b.armor);
   c.inv = [];
+  const wtOf = n => { const r = dndItemRef(n); return r ? r.wt || 0 : 0; }; const costOf = n => { const r = dndItemRef(n); return r && r.cost ? r.cost : ""; };
   if (ar) c.inv.push({ id: uid(), name: ar[0], qty: 1, wt: ar[6], notes: `AC ${ar[2]}${ar[3] === 0 ? "" : ar[3] ? " + DEX (max 2)" : " + DEX"}${ar[4] ? ` · needs STR ${ar[4]}` : ""}${ar[5] ? " · Stealth disadvantage" : ""}` });
   if (b.shield) c.inv.push({ id: uid(), name: "Shield", qty: 1, wt: 6, notes: "+2 AC" });
   const counts = {}; b.weapons.forEach(n => { counts[n] = (counts[n] || 0) + 1; });
-  Object.entries(counts).forEach(([n, q]) => c.inv.push({ id: uid(), name: n, qty: q, wt: 0, notes: "" }));
-  b.gear.split("\n").map(s => s.trim()).filter(Boolean).forEach(line => { const m = line.match(/^(.*?)\s*[×x]\s*(\d+)$/); c.inv.push({ id: uid(), name: (m ? m[1] : line).slice(0, 80), qty: m ? Number(m[2]) : 1, wt: 0, notes: "" }); });
+  Object.entries(counts).forEach(([n, q]) => c.inv.push({ id: uid(), name: n, qty: q, wt: wtOf(n), notes: costOf(n) }));
+  b.gear.split("\n").map(s => s.trim()).filter(Boolean).forEach(line => { const m = line.match(/^(.*?)\s*[×x]\s*(\d+)$/); const n = (m ? m[1] : line).slice(0, 80); c.inv.push({ id: uid(), name: n, qty: m ? Number(m[2]) : 1, wt: wtOf(n), notes: costOf(n) }); });
   c.coins = { cp: 0, sp: 0, ep: 0, gp: Number(b.gp) || 0, pp: 0 };
   // proficiencies and features as text the player can edit
   const tools = [ci.tools, bg.tool].filter(Boolean);

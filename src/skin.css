@@ -425,3 +425,38 @@ table.dnd-inv input{padding:6px 8px}
 .dnd-lvtable tr.now td{background:rgba(201,162,79,.16)}
 .dnd-lvtable .dnd-n{width:56px;font-family:var(--f-display);font-weight:700;color:var(--title)}
 }
+
+/* ---------- part 6: spell and equipment pickers, kits (catalogs.js) ---------- */
+:root:not([data-skin]){
+.dnd-spbtns{gap:4px;flex-wrap:nowrap;justify-content:flex-end}
+.dnd-spwrap{border-bottom:1px dotted var(--line)}
+.dnd-spwrap:last-child{border-bottom:0}
+.dnd-info{width:26px;height:26px;border-radius:50%;font-family:var(--f-display);font-weight:700;font-size:13px;font-style:italic;color:var(--title)}
+.dnd-info.on{background:var(--title);color:var(--accent-ink);border-color:var(--title)}
+.dnd-spdetail,.dnd-itdetail{margin:4px 0 10px 32px;padding:12px 14px;background:rgba(255,252,242,.6);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:4px}
+.dnd-itdetail{margin:8px 0 4px}
+.dnd-spdetail .dnd-facts div,.dnd-pickdetail .dnd-facts div{grid-template-columns:110px minmax(0,1fr)}
+.dnd-pick{display:grid;gap:10px}
+.dnd-pickfilters{gap:8px}
+.dnd-pickfilters input[type=text],.dnd-pickfilters input:not([type]){flex:1 1 240px;width:auto}
+.dnd-picklist{max-height:min(62vh,640px);overflow-y:auto;border:1px solid var(--line);border-radius:5px;background:var(--panel2)}
+.dnd-pickrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line)}
+.dnd-pickrow:last-child{border-bottom:0}
+.dnd-pickrow.open{background:rgba(201,162,79,.08)}
+.dnd-pickname{display:grid;gap:1px;min-width:0}
+.dnd-pickname b{font-family:var(--f-display);font-size:15px;color:var(--title);letter-spacing:.02em}
+.dnd-pickname:hover b{text-decoration:underline}
+.dnd-pickdetail{grid-column:1/-1;padding:4px 0 6px}
+.dnd-b-kits{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-bottom:16px}
+.dnd-kits{display:grid;gap:8px}
+.dnd-kit{display:grid;gap:3px;text-align:left;padding:10px 12px;border:1px solid var(--line2);border-radius:5px;background:rgba(255,252,242,.6);font-size:14.5px;line-height:1.35}
+.dnd-kit b{font-family:var(--f-display);color:var(--title);font-size:13px;letter-spacing:.06em}
+.dnd-kit:hover{border-color:var(--edge)}
+.dnd-kit.on{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.dnd-kit.on b{color:var(--gold)}
+}
+:root:not([data-skin]){
+.dnd-spell{grid-template-columns:24px minmax(0,1fr) minmax(0,1.6fr) 158px 30px}
+.dnd-spbtns .btn.ghost{border-color:var(--line2);font-family:var(--f-display);font-weight:700;color:var(--title)}
+@media (max-width:640px){.dnd-spell{grid-template-columns:24px minmax(0,1fr) auto 30px}}
+}

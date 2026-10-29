@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.3.0
+
+Every spell and piece of equipment in the free rules.
+
+- **Spell list:** "Add from the spell list" on the Spells tab opens all 341 SRD spells. Filter by class
+  list (yours to start with), level, school, or only the levels you can cast now, search by name, and
+  read any spell before adding it. Added spells come with their casting time, range, components and
+  duration.
+- **On the Spells tab:** an "i" on each spell opens its full description, school, components and
+  classes, with your save DC or spell attack. Damage and healing spells get a roll button with your
+  spellcasting modifier added and cantrips scaled to your level. Cantrip and prepared counts show
+  against your class table.
+- **Equipment list:** "Add from the equipment list" on the Inventory tab opens over 600 items:
+  weapons, armor, adventuring gear, tools, packs, potions, scrolls and the SRD's magic items, with
+  cost, weight, rarity and attunement. Weapons get an attack, magic weapons with their bonus.
+  Armor gets a Wear button that sets your Armor Class (counting a shield you carry).
+- **Starting equipment:** the creator's Equipment step offers your class's and background's options
+  (A, B or gold) and fills in armor, weapons, gear and gold from them. Items get their real weights.
+
 ## 0.2.0
 
 All 20 levels for every class.
