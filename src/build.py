@@ -10,8 +10,8 @@ M = json.load(open(os.path.join(ROOT, "game.json"), encoding="utf-8"))
 
 # which source files make up each script Monolith loads (the names in game.json "entry")
 SHARED = []                          # e.g. ["rules.js"] once you split rules out
-BUNDLES = {"game.js": SHARED + ["rules.js", "data.js", "classdata.js", "catalog.js", "sheet.js", "builder.js", "levelup.js", "catalogs.js", "resources.js", "extras.js", "actions.js", "ddb.js", "gm.js", "game.js"],
-           "combat.js": ["monsters.js", "gmcombat.js"]}   # the GM's page only
+BUNDLES = {"game.js": SHARED + ["rules.js", "data.js", "classdata.js", "catalog.js", "beasts.js", "statblock.js", "sheet.js", "builder.js", "levelup.js", "catalogs.js", "resources.js", "attackfx.js", "extras.js", "actions.js", "companions.js", "homebrew.js", "ddb.js", "gm.js", "game.js"],
+           "combat.js": ["monsters.js", "gmcombat.js", "hbgm.js"]}   # the GM's page only
 COPY = [f for f in M.get("css", [])]  # stylesheets listed in game.json, copied as they are
 FOLDERS = ["fonts", "images"]        # copied whole if they exist in src/
 

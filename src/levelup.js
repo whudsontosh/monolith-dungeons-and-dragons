@@ -7,7 +7,9 @@
 const dndLv = c => DND_LEVELS[c.cls] || null;
 const dndSubLevel = cls => { const L = DND_LEVELS[cls]; if (!L) return 3; for (const [lvl, fs] of Object.entries(L.levels)) if (fs.some(f => f.sub)) return Number(lvl); return 3; };
 /* the SRD subclass, if that's the one the character has */
-function dndSubData(c) { const L = dndLv(c); return L && L.sub && c.subclass && c.subclass.trim().toLowerCase() === L.sub.n.toLowerCase() ? L.sub : null; }
+function dndSubData(c) { const L = dndLv(c); if (!c.subclass) return null; if (L && L.sub && c.subclass.trim().toLowerCase() === L.sub.n.toLowerCase()) return L.sub; return typeof hbSub === "function" ? hbSub(c.cls, c.subclass) : null; }
+/* the subclasses a class can take: the free rules' one, then homebrew */
+const dndSubs = cls => [...(DND_LEVELS[cls] && DND_LEVELS[cls].sub ? [DND_LEVELS[cls].sub] : []), ...(typeof DND_HB_SUBS !== "undefined" ? DND_HB_SUBS[cls] || [] : [])];
 /* class table values at a level, e.g. [["Rages", 3], ["Rage Damage", 2]] */
 function dndTableAt(c, lvl) {
   const L = dndLv(c); if (!L) return []; const sub = dndSubData(c);
@@ -77,7 +79,7 @@ function dndClassFeatures(c, e, multi) {
   }
   const tilesInner = table.map(([n, val]) => dndTile(esc(n), `<b class="dnd-big">${esc(val)}</b>`)).join("") || dndTile("Class", `<b class="dnd-big">${esc(v.cls)}</b>`);
   const subPick = v.level >= subLvl ? `<label class="row dnd-small" style="gap:6px"><span class="label">${multi ? esc(e.cls) + " subclass" : "Subclass"}</span>
-      <select data-act-change="dnd-subpick" data-ci="${e.i}" aria-label="${esc(e.cls)} subclass" ${dndDis(c)}><option value="">—</option>${L.sub ? `<option ${sub ? "selected" : ""}>${esc(L.sub.n)}</option>` : ""}<option value="__other" ${v.subclass && !sub ? "selected" : ""}>Another subclass…</option></select>
+      <select data-act-change="dnd-subpick" data-ci="${e.i}" aria-label="${esc(e.cls)} subclass" ${dndDis(c)}><option value="">—</option>${dndSubs(e.cls).map(s => `<option ${sub && sub.n === s.n ? "selected" : ""}>${esc(s.n)}</option>`).join("")}<option value="__other" ${v.subclass && !sub ? "selected" : ""}>Another subclass…</option></select>
       ${v.subclass && !sub ? dndText(c, e.i === 0 ? "subclass" : `multi.${e.i - 1}.subclass`, v.subclass, `placeholder="Subclass name" style="width:180px"`) : ""}</label>` : `<span class="faint dnd-small">${multi ? esc(e.cls) + " subclass" : "Subclass"} at level ${subLvl}.</span>`;
   return { e, tiles: `<div class="dnd-tiles dnd-ctable">${tilesInner}</div>`, tilesInner, subPick, shown: rows.filter(r => !r.future).map(r => r.html).join(""), next: rows.filter(r => r.future) };
 }
@@ -113,11 +115,12 @@ function dndLvNeeds(c, st) {
   const asi = gains.find(g => g.f.asi);
   const picks = gains.filter(g => g.f.choose).map(g => ({ pool: g.f.pool, count: g.f.choose, options: (L.pools[g.f.pool] || []).filter(o => !(c.choices[g.f.pool] || []).includes(o.n) && dndPrereqLevel(o) <= n) }));
   // a subclass picked at this level can add its own features and picks at this level
-  const subNew = st.sub && st.sub !== "__other" && L.sub && st.sub === L.sub.n && !dndSubData(v) ? (L.sub.levels[n] || []) : [];
+  const picked = st.sub && st.sub !== "__other" ? dndSubs(v.cls).find(s => s.n === st.sub) : null;
+  const subNew = picked && !dndSubData(v) ? (picked.levels[n] || []) : [];
   const allNames = [...gains.map(g => g.f.n), ...subNew.map(f => f.n)];
   const styles = allNames.filter(dndIsFightingStyle).length && !gains.some(g => g.f.choose && g.f.pool === "Fighting Style") ? 1 : 0;
   const expertise = allNames.includes("Expertise") || (DND_EXTRA_EXPERTISE[v.cls] || []).includes(n) ? 2 : 0;
-  return { n, N, e: t.e, v, isNew: !!t.e.isNew, needSub, asi, picks, styles, expertise, subNew, gains };
+  return { n, N, e: t.e, v, isNew: !!t.e.isNew, picked, needSub, asi, picks, styles, expertise, subNew, gains };
 }
 function dndLvMissing(c, st) {
   const need = dndLvNeeds(c, st); const miss = [];
@@ -134,10 +137,10 @@ function dndLvMissing(c, st) {
   return miss;
 }
 /* feats that also raise an ability score by 1 (general feats and epic boons) */
-const dndFeatGivesAb = f => (f.cat === "general" && f.n !== "Ability Score Improvement") || f.cat === "epic-boon";
+const dndFeatGivesAb = f => f.hb ? !!f.ab : (f.cat === "general" && f.n !== "Ability Score Improvement") || f.cat === "epic-boon";
 /* the choice blocks for one level; w says where the choices live */
 function dndLvSections(c, st, w) {
-  const k = dndCalc(c); const need = dndLvNeeds(c, st); const v = need.v; const L = dndLv(v) || { pools: {}, levels: {} }; const n = need.n; const N = need.N; const W = `data-w="${w}"`;
+  const k = dndCalc(c); const need = dndLvNeeds(c, st); const v = need.v; const L = dndLv(v) || { pools: {}, levels: {} }; const n = need.n; const N = need.N; const W = `data-w="${w}"`; const picked = need.picked;
   const hd = (DND_CLASSES[v.cls] || { hd: 8 }).hd; const avg = hd / 2 + 1; const gain = Math.max(1, (st.hp === "roll" && st.roll ? st.roll : avg) + k.mod.con) + (c.hpPerLvl || 0);
   const abSel = (key, cur, cap) => `<select data-act-change="dnd-lv" ${W} data-k="${key}"><option value="">Choose…</option>${DND_ABILITIES.map(([a, nm]) => `<option value="${a}" ${cur === a ? "selected" : ""} ${c.ab[a] >= cap ? "disabled" : ""}>${nm} (${c.ab[a]})</option>`).join("")}</select>`;
   const feats = DND_FEAT_LIST.filter(f => (f.cat === "general" || f.cat === "epic-boon" || f.cat === "origin" || f.cat === "fighting-style") && f.n !== "Ability Score Improvement" && (f.lvl || 0) <= N && (f.cat !== "epic-boon" || N >= 19) && (f.rep || !c.feats.some(x => x.n === f.n)));
@@ -154,8 +157,8 @@ function dndLvSections(c, st, w) {
       ${st.hp === "roll" ? `<button class="btn sm primary" data-act="dnd-lv-roll" ${W} ${st.roll ? "disabled" : ""}>${st.roll ? `Rolled ${st.roll}` : "Roll"}</button>` : ""}
       <span class="faint dnd-small">${k.mod.con ? `${sgn(k.mod.con)} Constitution` : ""}${c.hpPerLvl ? ` +${c.hpPerLvl} per level` : ""}. New maximum: ${k.hpMax + gain}.</span></div></section>`);
   if (need.needSub) out.push(`<section class="dnd-b-choice ${st.sub ? "done" : "open"}"><div class="dnd-b-choice-h"><h3>Subclass</h3></div>
-    <div class="dnd-chips">${L.sub ? `<button class="dnd-chip ${st.sub === L.sub.n ? "on" : ""}" data-act="dnd-lv-set" ${W} data-k="sub" data-v="${esc(L.sub.n)}">${esc(L.sub.n)}</button>` : ""}<button class="dnd-chip ${st.sub === "__other" ? "on" : ""}" data-act="dnd-lv-set" ${W} data-k="sub" data-v="__other">Another subclass from your book</button></div>
-    ${st.sub === "__other" ? `<input class="dnd-lv-other" data-lv="subOther" ${W} value="${esc(st.subOther || "")}" placeholder="Subclass name" style="margin-top:10px">` : st.sub && L.sub ? `<div class="dnd-ftext" style="margin-top:10px">${dndParas(L.sub.t.split("\n\n")[0])}</div>` : ""}</section>`);
+    <div class="dnd-chips">${dndSubs(v.cls).map(s => `<button class="dnd-chip ${st.sub === s.n ? "on" : ""}" data-act="dnd-lv-set" ${W} data-k="sub" data-v="${esc(s.n)}">${esc(s.n)}${s.hb ? ` <span class="chip amber dnd-hbchip">Homebrew</span>` : ""}</button>`).join("")}<button class="dnd-chip ${st.sub === "__other" ? "on" : ""}" data-act="dnd-lv-set" ${W} data-k="sub" data-v="__other">Another subclass from your book</button></div>
+    ${st.sub === "__other" ? `<input class="dnd-lv-other" data-lv="subOther" ${W} value="${esc(st.subOther || "")}" placeholder="Subclass name" style="margin-top:10px">` : picked ? `<div class="dnd-ftext" style="margin-top:10px">${dndParas(picked.t.split("\n\n")[0])}</div>` : ""}</section>`);
   if (need.asi) {
     const isEpic = n === 19;
     out.push(`<section class="dnd-b-choice"><div class="dnd-b-choice-h"><h3>${isEpic ? "Epic Boon (or another feat)" : "Ability Score Improvement or a feat"}</h3></div>

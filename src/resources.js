@@ -42,6 +42,11 @@ function dndResources(c) {
       const key = e.i === 0 || !out.some(x => x.k === r.k) ? r.k : `${e.cls.toLowerCase()}-${r.k}`;
       const rest = typeof r.rest === "function" ? r.rest(v) : r.rest;
       out.push({ k: key, n: out.some(x => x.n === r.n) ? `${r.n} (${e.cls})` : r.n, max, used: Math.min(max, (c.res || {})[key] || 0), rest, note: r.note ? r.note(v) : "", src: e.cls }); }); });
+  // homebrew subclass features with uses
+  dndClassList(c).forEach(e => { const sub = typeof hbSub === "function" ? hbSub(e.cls, e.subclass) : null; if (!sub) return;
+    Object.entries(sub.levels).forEach(([lvl, fs]) => { if (Number(lvl) > e.level) return; fs.forEach(f => { if (!f.uses) return; const max = hbUsesMax(f.uses, c, k); if (!max) return;
+      const key = ("hb-" + f.n.toLowerCase().replace(/[^a-z0-9]+/g, "")).slice(0, 20); if (out.some(x => x.k === key)) return;
+      out.push({ k: key, n: f.n, max, used: Math.min(max, (c.res || {})[key] || 0), rest: f.rest === "none" ? "long" : f.rest, note: sub.n, src: e.cls }); }); }); });
   const extra = [...Object.entries(DND_RES_SPECIES).filter(([sp]) => new RegExp(`\\b${sp}\\b`, "i").test(c.species || "")).flatMap(([, l]) => l),
     ...Object.entries(DND_RES_FEATS).filter(([f]) => (c.feats || []).some(x => x.n === f)).flatMap(([, l]) => l)];
   extra.forEach(r => { if (r.from && c.level < r.from) return; const max = r.max(c, k); if (!max || out.some(x => x.k === r.k)) return;
@@ -67,7 +72,7 @@ function dndResourcesPanel(c) {
           <input type="number" class="dnd-respool" data-act-change="dnd-respool" data-k="${r.k}" min="0" max="${r.max}" value="${left}" aria-label="${esc(r.n)} left" ${dndDis(c)}>
           <button class="icon-btn" data-act="dnd-resstep" data-k="${r.k}" data-d="-1" aria-label="Get one back" ${r.used ? "" : "disabled"} ${dndDis(c)}>+</button></span>`;
     return `<div class="dnd-resrow"><div style="min-width:0"><b>${esc(r.n)}</b> <span class="faint dnd-small">${left} of ${r.max}</span>
-        <div class="faint dnd-small">${esc([r.note, DND_REST_TEXT[r.rest]].filter(Boolean).join(" · "))}</div></div>${ctl}</div>`; }).join("")}
+        <div class="faint dnd-small">${esc([r.note, DND_REST_TEXT[r.rest]].filter(Boolean).join(" · "))}</div></div><span class="row" style="gap:8px;flex-wrap:nowrap">${r.k === "rage" ? `<button class="btn sm ${c.raging ? "danger" : "primary"}" data-act="dnd-rage" ${dndDis(c)}>${c.raging ? "End rage" : "Rage"}</button>` : ""}${ctl}</span></div>`; }).join("")}
     ${tr.map((t, i) => dndTrackerRow(c, t, i)).join("")}
     ${!list.length && !tr.length ? `<p class="faint dnd-small" style="margin:0">Nothing to track yet. Use + Track for a feat, item or ability with limited uses.</p>` : ""}</div></section>`;
 }

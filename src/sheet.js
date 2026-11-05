@@ -83,7 +83,7 @@ function dndTile(label, value, extra = "") { return `<div class="dnd-tile">${val
 function dndSheetView(c) {
   const k = dndCalc(c); const tab = ui.dndTab;
   const sub = [`Level ${c.level}`, c.species, dndClassList(c).filter(e => e.cls).map(e => [e.cls, dndIsMulti(c) ? e.level : "", e.subclass && `(${e.subclass})`].filter(Boolean).join(" ")).join(" / ")].filter(Boolean).join(" · ") || "New character";
-  const tabs = [["sheet", "Sheet"], ["actions", "Actions"], ["features", "Features"], ["spells", "Spells"], ["inv", "Inventory"], ["details", "Details"]];
+  const tabs = [["sheet", "Sheet"], ["actions", "Actions"], ["features", "Features"], ["spells", "Spells"], ["inv", "Inventory"], ["comps", "Companions"], ["details", "Details"]];
   const back = ROLE === "gm" ? `<button class="btn sm ghost" data-act="close-pc">← The party</button>` : "";
   const sm = ROLE !== "gm" ? sample() : null; const isSample = !!(sm && sm.id === c.id);
   return `<div class="dnd" data-cid="${esc(c.id)}">
@@ -96,6 +96,7 @@ function dndSheetView(c) {
         <div class="seg" role="group" aria-label="Next d20 roll" title="Applies to your next d20 roll. Or Shift+click a roll for advantage, Ctrl+click for disadvantage.">
           ${[["normal", "Normal"], ["adv", "Advantage"], ["dis", "Disadvantage"]].map(([m, l]) => `<button class="${ui.dndAdv === m ? "on" : ""}" data-act="dnd-adv" data-m="${m}">${l}</button>`).join("")}
         </div>
+        ${c.raging ? `<button class="btn sm danger" data-act="dnd-rage" title="End your Rage">Raging · end</button>` : ""}
         <button class="btn sm ${c.insp ? "primary" : ""}" data-act="dnd-insp" aria-pressed="${c.insp}" ${dndDis(c)}>${c.insp ? "★" : "☆"} Heroic Inspiration</button>
         ${c.level < 20 && dndCanEdit(c) && DND_LEVELS[c.cls] ? `<button class="btn sm primary" data-act="dnd-levelup">Level up</button>` : ""}
         <button class="btn sm" data-act="dnd-short" ${dndDis(c)}>Short rest</button>
@@ -103,7 +104,7 @@ function dndSheetView(c) {
       </div>
     </div>
     <nav class="dnd-tabs" aria-label="Sheet sections">${tabs.map(([id, l]) => `<button class="${tab === id ? "on" : ""}" data-act="dnd-tab" data-t="${id}">${l}</button>`).join("")}</nav>
-    ${tab === "actions" ? dndActionsTab(c, k) : tab === "features" ? dndFeaturesTab(c, k) : tab === "spells" ? dndSpellsTab(c, k) : tab === "inv" ? dndInvTab(c, k) : tab === "details" ? dndDetailsTab(c, k) : dndMainTab(c, k)}
+    ${tab === "comps" ? dndCompanionsTab(c, k) : tab === "actions" ? dndActionsTab(c, k) : tab === "features" ? dndFeaturesTab(c, k) : tab === "spells" ? dndSpellsTab(c, k) : tab === "inv" ? dndInvTab(c, k) : tab === "details" ? dndDetailsTab(c, k) : dndMainTab(c, k)}
   </div>`;
 }
 
@@ -125,7 +126,7 @@ function dndMainTab(c, k) {
       <span class="dnd-li-n">${n} <span class="faint dnd-abbr">${a.toUpperCase()}</span></span>
       <button class="dnd-roll" data-act="dnd-skill" data-s="${s}" title="Roll ${n}">${sgn(k.skill[s])}</button>
     </div>`; }).join("");
-  return `<div class="dnd-grid">
+  return `${c.form ? dndFormBanner(c) : ""}<div class="dnd-grid">
     <div class="dnd-col">
       <div class="dnd-abs">${abil}</div>
       <section class="panel"><div class="panel-h"><h3>Saving throws</h3>${k.saveB ? `<span class="chip blue">${sgn(k.saveB)} from items</span>` : ""}</div><div class="panel-b dnd-list">${saves}</div></section>
@@ -199,18 +200,19 @@ function dndConditionsPanel(c, k) {
 }
 
 function dndAttacksPanel(c, k) {
-  const rows = c.attacks.map((a, i) => {
+  const rows = [...c.attacks.map((a, i) => [a, i]), [dndUnarmed(c), "u"]].map(([a, i]) => {
     const n = dndAttackNums(c, k, a);
-    const dmg = [a.dmg || "—", n.dmgMod ? sgn(n.dmgMod) : ""].join(" ").trim();
-    const editing = ui.dndEdit === a.id;
+    const dmg = [n.dmg || (a.unarmed ? "" : "—"), n.dmgMod ? (n.dmg ? sgn(n.dmgMod) : String(Math.max(1, n.dmgMod))) : ""].join(" ").trim() || "1";
+    const editing = ui.dndEdit === a.id && !a.unarmed;
     return `<div class="dnd-atk ${editing ? "editing" : ""}">
       <div class="dnd-atk-main">
-        <div class="dnd-atk-name"><b>${esc(a.name || "Unnamed attack")}</b>${a.notes ? `<span class="faint">${esc(a.notes)}</span>` : ""}</div>
+        <div class="dnd-atk-name"><b>${esc(a.name || "Unnamed attack")}</b>${a.notes || n.notes.length || n.ma || n.critMin < 20 ? `<span class="faint">${esc([a.notes, ...n.notes, n.ma ? "Martial Arts" : "", n.critMin < 20 ? `crits on ${n.critMin}–20` : ""].filter(Boolean).join(" · "))}</span>` : ""}</div>
         <button class="btn sm dnd-hit" data-act="dnd-attack" data-i="${i}" title="Roll to hit">${sgn(n.hit)} to hit</button>
-        <button class="btn sm" data-act="dnd-dmgroll" data-i="${i}" ${a.dmg ? "" : "disabled"} title="Roll damage">${esc(dmg)}${a.type ? " " + esc(a.type) : ""}</button>
-        <button class="btn sm ghost" data-act="dnd-crit" data-i="${i}" ${a.dmg ? "" : "disabled"} title="Roll critical damage (dice doubled)">Crit</button>
-        ${dndCanEdit(c) ? `<button class="btn sm ghost" data-act="dnd-edit" data-id="${esc(a.id)}">${editing ? "Done" : "Edit"}</button>` : ""}
+        <button class="btn sm" data-act="dnd-dmgroll" data-i="${i}" ${n.dmg || a.unarmed ? "" : "disabled"} title="Roll damage">${esc(dmg)}${a.type ? " " + esc(a.type) : ""}</button>
+        <button class="btn sm ghost" data-act="dnd-crit" data-i="${i}" ${n.dmg ? "" : "disabled"} title="Roll critical damage (dice doubled)">Crit</button>
+        ${dndCanEdit(c) && !a.unarmed ? `<button class="btn sm ghost" data-act="dnd-edit" data-id="${esc(a.id)}">${editing ? "Done" : "Edit"}</button>` : "<span></span>"}
       </div>
+      ${n.riders.length || n.mast ? `<div class="row dnd-riders">${dndRiderBtns(c, n, i)}</div>` : ""}
       ${editing ? `<div class="dnd-atk-edit">
         <div class="field"><label class="label">Name</label>${dndText(c, `attacks.${i}.name`, a.name, `placeholder="Longsword"`)}</div>
         <div class="field"><label class="label">Uses</label><select data-dnd="attacks.${i}.ab">${[["str", "Strength"], ["dex", "Dexterity"], ["fin", "Finesse (best of STR/DEX)"], ["spell", "Spellcasting ability"], ["none", "Nothing"]].map(([v, l]) => `<option value="${v}" ${a.ab === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
@@ -363,12 +365,12 @@ Object.assign(A, {
   "dnd-saveprof": dndAct((c, el) => { c.saveProf[el.dataset.a] = !c.saveProf[el.dataset.a]; }),
   "dnd-skillprof": dndAct((c, el) => { const s = el.dataset.s; const v = ((c.skills[s] || 0) + 1) % 3; if (v) c.skills[s] = v; else delete c.skills[s]; }),
   "dnd-attack": dndAct((c, el, ev) => {
-    const a = c.attacks[Number(el.dataset.i)]; if (!a) return false; const k = dndCalc(c); const n = dndAttackNums(c, k, a);
-    const r = dndD20(c, `${a.name || "Attack"}: to hit`, n.hit, ev);
-    if (r.nat === 20) showNotice(`Critical hit! Use Crit to roll ${a.name || "the"} damage with the dice doubled.`);
+    const a = dndAtkAt(c, el.dataset.i); if (!a) return false; const k = dndCalc(c); const n = dndAttackNums(c, k, a);
+    const r = dndD20(c, `${a.name || "Attack"}: to hit`, n.hit, ev); dndRememberHit(c, el.dataset.i, r.nat, n.critMin || 20);
+    if (r.nat >= (n.critMin || 20)) showNotice(`Critical hit${r.nat < 20 ? ` on a ${r.nat}` : ""}! Use Crit to roll ${a.name || "the"} damage with the dice doubled${n.riders.length ? "; extra damage you add doubles too" : ""}.`);
     return false; }, false),
-  "dnd-dmgroll": dndAct((c, el) => dndRollDamage(c, Number(el.dataset.i), false), false),
-  "dnd-crit": dndAct((c, el) => dndRollDamage(c, Number(el.dataset.i), true), false),
+  "dnd-dmgroll": dndAct((c, el) => dndRollDamage(c, el.dataset.i, false), false),
+  "dnd-crit": dndAct((c, el) => dndRollDamage(c, el.dataset.i, true), false),
   "dnd-edit": el => { ui.dndEdit = ui.dndEdit === el.dataset.id ? null : el.dataset.id; render(); },
   "dnd-addatk": dndAct(c => { const a = { id: uid(), name: "", ab: "str", prof: true, dmg: "", type: "", bonus: 0, dmgBonus: 0, notes: "" }; c.attacks.push(a); ui.dndEdit = a.id;
     setTimeout(() => document.querySelector(`[data-dnd="attacks.${c.attacks.length - 1}.name"]`)?.focus(), 60); }),
@@ -405,15 +407,16 @@ Object.assign(A, {
     const back = dndResources(c).filter(r => r.rest !== "long").map(r => r.n);
     showNotice(`Short rest: spend hit dice to heal.${dndCalc(c).pact[0] ? " Pact slots are back." : ""}${back.length ? ` ${back.join(", ")} recharged.` : ""}`); }),
   "dnd-long": dndAct(c => {
-    c.hp = null; c.hpTemp = 0; c.hdSpent = 0; c.hdBy = {}; dndRestOther(c, "long"); c.slotsUsed = c.slotsUsed.map(() => 0); c.pactUsed = 0; dndRestResources(c, "long"); if (c.species === "Human") c.insp = true;  c.death = { s: 0, f: 0 };
+    c.hp = null; c.hpTemp = 0; c.hdSpent = 0; c.hdBy = {}; (c.comps || []).forEach(x => { x.hp = x.max; }); c.form = ""; dndRestOther(c, "long"); c.slotsUsed = c.slotsUsed.map(() => 0); c.pactUsed = 0; dndRestResources(c, "long"); if (c.species === "Human") c.insp = true;  c.death = { s: 0, f: 0 };
     c.exhaustion = Math.max(0, c.exhaustion - 1); c.conditions = c.conditions.filter(x => x !== "Unconscious");
     showNotice(`Long rest: ${dndName(c)} is back to full hit points, with every hit die and spell slot restored${c.exhaustion ? " and one level of exhaustion gone" : ""}.`); }),
 });
 A["dnd-cast"] = dndAct((c, el) => dndCast(c, c.spells[Number(el.dataset.i)]));
 
 function dndRollDamage(c, i, crit) {
-  const a = c.attacks[i]; if (!a) return false; const k = dndCalc(c); const n = dndAttackNums(c, k, a);
-  const r = dndRollExpr(a.dmg, n.dmgMod, crit); if (!r) { showNotice(`"${a.dmg}" isn't a dice expression. Try 1d8 or 2d6+1d4.`); return false; }
+  const a = dndAtkAt(c, i); if (!a) return false; const k = dndCalc(c); const n = dndAttackNums(c, k, a);
+  if (a.unarmed && !n.dmg) { Dice.raw("Unarmed Strike: damage", "1 + Strength", Math.max(1, n.dmgMod), dndName(c), [{ t: "bludgeoning", c: "ink" }]); return false; }
+  const r = dndRollExpr(n.dmg, n.dmgMod, crit); if (!r) { showNotice(`"${n.dmg}" isn't a dice expression. Try 1d8 or 2d6+1d4.`); return false; }
   Dice.raw(`${a.name || "Attack"}: ${crit ? "critical damage" : "damage"}`, r.text, r.total, dndName(c), [a.type ? { t: a.type, c: "ink" } : null, crit ? { t: "Critical", c: "amber" } : null].filter(Boolean));
   return false;
 }
@@ -465,7 +468,8 @@ function dndTablePanel(c) {
       <button class="btn sm" data-act="dnd-skill" data-s="perception">Perception ${sgn(k.skill.perception)}</button>
       ${k.hp === 0 && !k.dead ? `<button class="btn sm primary" data-act="dnd-deathroll">Death save</button>` : ""}
     </div>
-    ${c.attacks.length ? `<div style="display:grid;gap:4px">${c.attacks.map((a, i) => { const n = dndAttackNums(c, k, a); return `<div class="row" style="gap:6px;flex-wrap:nowrap"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.name || "Attack")}</span><button class="btn sm" data-act="dnd-attack" data-i="${i}">${sgn(n.hit)}</button><button class="btn sm ghost" data-act="dnd-dmgroll" data-i="${i}" ${a.dmg ? "" : "disabled"}>${esc(a.dmg || "—")}${n.dmgMod ? sgn(n.dmgMod) : ""}</button></div>`; }).join("")}</div>` : ""}
+    ${c.attacks.length ? `<div style="display:grid;gap:4px">${c.attacks.map((a, i) => { const n = dndAttackNums(c, k, a); return `<div class="row" style="gap:6px;flex-wrap:nowrap"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.name || "Attack")}</span><button class="btn sm" data-act="dnd-attack" data-i="${i}">${sgn(n.hit)}</button><button class="btn sm ghost" data-act="dnd-dmgroll" data-i="${i}" ${n.dmg ? "" : "disabled"}>${esc(n.dmg || "—")}${n.dmgMod ? sgn(n.dmgMod) : ""}</button></div>`; }).join("")}</div>` : ""}
+    ${c.raging ? `<span class="chip red">Raging</span>` : ""}
     <span class="faint dnd-small">Shift+click a roll for advantage, Ctrl+click for disadvantage.</span>
   </div>`;
 }

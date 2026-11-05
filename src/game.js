@@ -57,7 +57,8 @@ Monolith.registerGame({
   rulesets: { "dnd5.5e": {
     name: "5.5e",
     character: {
-      blank: () => { const c = dndBlank(); c.build = dndNewBuild(); return c; }, normalize: dndNormalize,
+      blank: () => { const c = dndBlank(); c.build = dndNewBuild(); if (ui.hbPendingCamp) { c.campaign = ui.hbPendingCamp; ui.hbPendingCamp = null; } return c; }, normalize: dndNormalize,
+      beforeSave: c => hbBeforeSave(c),
       isCharacter: x => !!(x && typeof x === "object" && typeof x.id === "string"),
       isFinished: c => !!(c && !c.build && c.name && c.cls),
       joined: c => { c.done = true; },
@@ -71,11 +72,12 @@ Monolith.registerGame({
       views: { sheet: c => dndSheetView(c), build: c => dndBuilderView(c) }, openView: c => c.build ? "build" : "sheet",
       onOpen: c => { ui.dndTab = c.cls ? "sheet" : "details"; ui.dndEdit = null; ui.dndAdv = "normal"; },
       tablePanel: c => dndTablePanel(c),
-      navExtra: () => `<button data-act="ddb-open" title="Bring a character over from D&D Beyond">Import from D&D Beyond</button>`,
+      navExtra: () => `<button data-act="ddb-open" title="Bring a character over from D&D Beyond">Import from D&D Beyond</button><button data-act="hb-open">Homebrew${hbInstalled().length ? ` · ${hbInstalled().length}` : ""}</button>`,
+      onMessage: (type, m) => hbPlayerMessage(type, m),
     },
     campaign: {
-      defaults: () => ({ combat: { round: 1, turn: 0, list: [] } }),
-      normalize: s => { const c = s.combat && typeof s.combat === "object" ? s.combat : {}; s.combat = { round: Math.max(1, Number(c.round) || 1), turn: Math.max(0, Number(c.turn) || 0), list: Array.isArray(c.list) ? c.list.slice(0, 200) : [] }; },
+      defaults: () => ({ combat: { round: 1, turn: 0, list: [] }, packs: [] }),
+      normalize: s => { s.packs = (Array.isArray(s.packs) ? s.packs : []).filter(x => typeof x === "string").slice(0, 40); const c = s.combat && typeof s.combat === "object" ? s.combat : {}; s.combat = { round: Math.max(1, Number(c.round) || 1), turn: Math.max(0, Number(c.turn) || 0), list: Array.isArray(c.list) ? c.list.slice(0, 200) : [] }; },
       summary: s => (s.combat && s.combat.list && s.combat.list.length ? `A fight in round ${s.combat.round}` : ""),
     },
     gm: {
@@ -83,7 +85,10 @@ Monolith.registerGame({
       partyTable: list => dndPartyTable(list),
       characterView: c => dndSheetView(c),
       // the Combat tab and monsters come from combat.js, which only the GM's page loads
-      tabs: [{ id: "combat", label: () => "Combat", view: () => typeof dndCombatTab === "function" ? dndCombatTab() : "", order: 20 }],
+      tabs: [{ id: "combat", label: () => "Combat", view: () => typeof dndCombatTab === "function" ? dndCombatTab() : "", order: 20 },
+        { id: "homebrew", label: () => "Homebrew", view: () => typeof hbView === "function" ? hbView() : "", order: 50 }],
+      onPeek: conn => { if (typeof hbSendRules === "function") hbSendRules(conn, true); },
+      onJoined: conn => { if (typeof hbSendRules === "function") hbSendRules(conn, false); },
       tokenRing: t => t.kind === "pc" ? dndTokenRing(t) : typeof dndCbTokenRing === "function" ? dndCbTokenRing(t) : null,
       tokenInfo: t => t.kind === "pc" ? dndTokenInfo(t) : typeof dndCbTokenInfo === "function" ? dndCbTokenInfo(t) : "",
       activeTurn: () => typeof dndCbActiveTurn === "function" ? dndCbActiveTurn() : null,

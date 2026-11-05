@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.6.0
+
+Class features on attacks, companions and Wild Shape, and homebrew.
+
+- **Class features on attacks:** Rage adds its damage to Strength attacks (the Rage button spends a
+  use and gives resistance to bludgeoning, piercing and slashing until a rest). Rogues get a Sneak
+  Attack button on finesse and ranged weapons, Paladins a Divine Smite button that asks which slot
+  to spend, and Hunter's Mark and Hex add their dice while you concentrate on them. Martial Arts
+  uses Dexterity and the Martial Arts die for monk weapons, Archery adds +2 to ranged attacks, and
+  the Champion's Improved and Superior Critical score crits on 19 or 18. Extra damage doubles after
+  a critical hit. Weapons show their mastery property (Topple with its save DC, Graze with its
+  damage on a miss). Everyone gets an Unarmed Strike.
+- **Companions tab:** familiars, animal companions, mounts and summons from the bestiary (the beasts
+  up to CR 2 for players, every monster for the GM, plus homebrew) or written in, each with hit
+  points, AC, speed, notes and a stat block that rolls its attacks. Druids learn Wild Shape forms
+  within their CR and flying limits; assuming a form spends a use and gives temporary hit points,
+  the Sheet tab shows the form, and dropping it to 0 HP ends it.
+- **Homebrew (like Cyberpunk's):** the GM's Homebrew tab writes packs of subclasses (with features
+  and their uses), species, backgrounds, feats, spells, magic items and equipment (weapons, armor,
+  bonuses, charges) and monsters. Turn a pack on for a campaign and players get it when they join;
+  save it as a .dndhomebrew file to share. Players can install pack files from the Homebrew window
+  and choose which packs each character uses. Homebrew shows up in the creator, Level up, the
+  spell, equipment and monster lists, and the Combat tab. Every character keeps a copy of the
+  homebrew it uses, so it keeps working where the pack isn't installed. Packs are checked and
+  cleaned when they're read; nothing in one is ever run.
+
 ## 0.5.0
 
 Import from D&D Beyond, multiclassing, and the rest of what a D&D Beyond sheet tracks.

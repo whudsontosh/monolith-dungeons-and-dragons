@@ -558,4 +558,40 @@ tr.dnd-eq td:first-child{box-shadow:inset 3px 0 0 var(--gold)}
 .dnd-ddb ol{margin:0;padding-left:20px;display:grid;gap:4px}
 .dnd-ddb-preview{display:grid;gap:8px;padding:12px 14px;border:1px solid var(--line2);border-radius:8px;background:rgba(255,252,242,.6)}
 .dnd-ddb-preview ul{margin:0;padding-left:18px;font-size:14px}
+
+/* ---------- part 9: attack riders, companions, homebrew (attackfx.js, companions.js, homebrew.js, hbgm.js) ---------- */
+.dnd-riders{gap:6px;margin-top:6px;padding-left:2px}
+.dnd-rider{border-style:dashed}
+.dnd-mast{cursor:help}
+.dnd-comps{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-bottom:16px;align-items:start}
+.dnd-comp.on{box-shadow:var(--lit),0 0 0 2px var(--gold)}
+.dnd-compname{font-family:var(--f-display);font-weight:700;font-size:17px;color:var(--title);padding:5px 8px}
+.dnd-compstats{display:grid;grid-template-columns:70px minmax(0,1.2fr) 80px minmax(0,1fr);gap:8px;align-items:start}
+.dnd-compstats .dnd-cbdmg{grid-column:1/-1}
+.dnd-compstats .meter{margin-top:4px;height:5px;border-radius:3px;overflow:hidden}
+.dnd-compstats input{padding:6px 7px}
+.dnd-formbanner{margin-bottom:16px;border-left-color:var(--gold);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dnd-hbchip{font-size:10.5px;padding:1px 6px;vertical-align:middle}
+.dnd-hblayout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:900px){.dnd-hblayout{grid-template-columns:minmax(0,1fr)}}
+.dnd-hbpack{display:grid;gap:4px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:rgba(255,252,242,.5)}
+.dnd-hbpack.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold)}
+.dnd-hbpackn{display:grid;gap:1px;text-align:left}
+.dnd-hbname{font-family:var(--f-display);font-weight:700;font-size:18px;color:var(--title);flex:1;min-width:0;padding:5px 8px}
+.dnd-hbsecs{flex-wrap:wrap}
+.dnd-hbsplit{display:grid;grid-template-columns:230px minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:1100px){.dnd-hbsplit{grid-template-columns:minmax(0,1fr)}}
+.dnd-hbitems{display:grid;gap:6px;align-content:start}
+.dnd-hbitem{display:grid;gap:1px;text-align:left;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:rgba(255,252,242,.55)}
+.dnd-hbitem.on{border-color:var(--edge);background:rgba(156,43,27,.07)}
+.dnd-hbedit{min-width:0}
+.dnd-hbform{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+@media (max-width:700px){.dnd-hbform{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+.dnd-hbrows{display:grid;gap:10px}
+.dnd-hbrowed{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:start;padding:10px;border:1px dotted var(--line2);border-radius:8px}
+.dnd-hbrowed .dnd-form{gap:8px}
+.dnd-hbform .dnd-chip input{display:none}
+.dnd-hblist{display:grid;gap:10px}
+.dnd-hbrow{padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:rgba(255,252,242,.5)}
+.dnd-hbc{display:grid;gap:3px;font-size:14px}
 }

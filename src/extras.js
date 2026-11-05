@@ -85,6 +85,7 @@ Object.assign(A, {
 
 /* what a rest gives back besides class resources: other limited uses and item charges */
 function dndRestOther(c, kind) {
+  c.raging = false;
   (c.trackers || []).forEach(t => { if (t.rest === "short" || (kind === "long" && (t.rest === "long" || t.rest === "dawn"))) t.used = 0; });
   (c.inv || []).forEach(it => { if (it.ch && (it.chRest === "short" || (kind === "long" && (it.chRest === "long" || it.chRest === "dawn")))) it.chUsed = 0; });
   if (typeof dndRestSpecies === "function") dndRestSpecies(c, kind);

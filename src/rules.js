@@ -89,6 +89,7 @@ function dndCasterKind(c, e) {
   if (e.i === 0 && c.caster !== "auto") return c.caster;
   const ci = DND_CLASSES[e.cls]; if (!ci) return "none";
   if (ci.caster === "none" && /eldritch knight|arcane trickster/i.test(e.subclass || "")) return "third";
+  if (ci.caster === "none" && typeof hbSub === "function" && (hbSub(e.cls, e.subclass) || {}).caster === "third" && e.level >= 3) return "third";
   return ci.caster;
 }
 /* multiclassing needs 13 in each class's main ability (2024 rules) */
@@ -154,6 +155,9 @@ function dndBlank() {
     speeds: { fly: 0, swim: 0, climb: 0, burrow: 0 },
     traits: { pers: "", ideals: "", bonds: "", flaws: "" }, backstory: "", allies: "",
     phys: { gender: "", age: "", height: "", weight: "", eyes: "", hair: "", skin: "", faith: "", size: "" },
+    raging: false,              // a Barbarian's Rage is on
+    comps: [], form: "",        // companions, familiars and Wild Shape forms (companions.js); the form worn now
+    packs: null, campaign: null, homebrew: null,   // homebrew packs it uses (null: all installed), its campaign, and a copy of the homebrew it uses (homebrew.js)
     portrait: "", ddb: "",      // portrait image (link or small picture); the D&D Beyond character it came from
     color: "", done: false, build: null, createdAt: now, updatedAt: now,
   };
@@ -198,7 +202,14 @@ function dndNormalize(x) {
   c.phys = Object.fromEntries(Object.keys(b.phys).map(k => [k, str((c.phys || {})[k], 80)]));
   c.backstory = str(c.backstory, 40000); c.allies = str(c.allies, 20000);
   c.portrait = /^(https?:\/\/|data:image\/(png|jpeg|webp);base64,)/.test(String(c.portrait || "")) ? str(c.portrait, 200000) : "";
-  c.ddb = str(c.ddb, 20);
+  c.ddb = str(c.ddb, 20); c.raging = !!c.raging;
+  c.packs = Array.isArray(c.packs) ? [...new Set(c.packs.map(x => String(x).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40)).filter(Boolean))].slice(0, 40) : null;
+  c.campaign = c.campaign && typeof c.campaign === "object" ? { id: str(c.campaign.id, 40), name: str(c.campaign.name, 60), packs: (Array.isArray(c.campaign.packs) ? c.campaign.packs : []).map(x => str(x, 40)).filter(Boolean).slice(0, 40) } : null;
+  if (c.homebrew && typeof hbSanitize === "function") { try { c.homebrew = hbSanitize(c.homebrew, true).pack; } catch (e) { c.homebrew = null; } } else if (!c.homebrew || typeof c.homebrew !== "object") c.homebrew = null;
+  c.comps = (Array.isArray(c.comps) ? c.comps : []).slice(0, 40).map(x => { const max = num(x && x.max, 1, 9999, 1);
+    return { id: str(x && x.id, 40) || uid(), kind: ["companion", "familiar", "mount", "summon", "form", "other"].includes(x && x.kind) ? x.kind : "other", n: str(x && x.n, 80), m: str(x && x.m, 80),
+      ac: num(x && x.ac, 0, 40, 10), hp: num(x && x.hp, 0, max, max), max, temp: num(x && x.temp, 0, 999, 0), speed: str(x && x.speed, 80), notes: str(x && x.notes, 600) }; });
+  c.form = c.comps.some(x => x.id === c.form && x.kind === "form") ? c.form : "";
   const rs = {}; Object.entries(c.res && typeof c.res === "object" ? c.res : {}).slice(0, 30).forEach(([k, v]) => { const n = Number(v); if (n > 0) rs[str(k, 20)] = Math.min(999, Math.round(n)); }); c.res = rs;
   c.ac = num(c.ac, 0, 50, 10); c.speed = num(c.speed, 0, 300, 0); c.initBonus = num(c.initBonus, -20, 20, 0);
   c.hpMax = num(c.hpMax, 0, 9999, 0); c.hp = c.hp == null || c.hp === "" ? null : num(c.hp, 0, 9999, 0);
@@ -211,7 +222,7 @@ function dndNormalize(x) {
   c.slotsUsed = Array.from({ length: 10 }, (_, i) => num((c.slotsUsed || [])[i], 0, 9, 0)); c.pactUsed = num(c.pactUsed, 0, 9, 0);
   const list = (v, max, f) => (Array.isArray(v) ? v : []).slice(0, max).map(f);
   c.attacks = list(c.attacks, 40, a => ({ id: str(a.id, 40) || uid(), name: str(a.name, 80), ab: ["str", "dex", "fin", "spell", "none"].includes(a.ab) ? a.ab : "str",
-    prof: a.prof !== false, dmg: str(a.dmg, 40), type: str(a.type, 40), bonus: num(a.bonus, -20, 20, 0), dmgBonus: num(a.dmgBonus, -20, 40, 0), notes: str(a.notes, 300) }));
+    prof: a.prof !== false, rng: a.rng == null ? null : !!a.rng, dmg: str(a.dmg, 40), type: str(a.type, 40), bonus: num(a.bonus, -20, 20, 0), dmgBonus: num(a.dmgBonus, -20, 40, 0), notes: str(a.notes, 300) }));
   c.spells = list(c.spells, 300, s => ({ id: str(s.id, 40) || uid(), lvl: num(s.lvl, 0, 9, 0), name: str(s.name, 80), prep: !!s.prep, notes: str(s.notes, 300), cls: str(s.cls, 40) }));
   const fxOf = f => { const o = {}; ["ac", "save", "check", "spAtk", "spDc"].forEach(k => { const n = num((f || {})[k], -10, 10, 0); if (n) o[k] = n; }); return o; };
   c.inv = list(c.inv, 300, it => ({ id: str(it.id, 40) || uid(), name: str(it.name, 80), qty: num(it.qty, 0, 99999, 1), wt: Math.max(0, Number(it.wt) || 0), notes: str(it.notes, 300),
@@ -295,6 +306,8 @@ function dndCalc(c) {
   const casting = casters.map(x => { const a = abOf(x.e); return { cls: x.e.cls, kind: x.kind, ab: a, dc: 8 + pb + mod[a] + spDcB, atk: pb + mod[a] + spAtkB }; });
   // defenses and senses
   const defs = { res: [...(c.defs || {}).res || []], imm: [...(c.defs || {}).imm || []], vuln: [...(c.defs || {}).vuln || []], cimm: [...(c.defs || {}).cimm || []] };
+  ((typeof DND_SPECIES_INFO !== "undefined" && DND_SPECIES_INFO[c.species] && DND_SPECIES_INFO[c.species].res) || []).forEach(t => { if (!defs.res.includes(t)) defs.res.push(t); });
+  if (c.raging && ents.some(e => e.cls === "Barbarian")) ["Bludgeoning", "Piercing", "Slashing"].forEach(t => { if (!defs.res.includes(t)) defs.res.push(t); });
   on.forEach(x => { (x.fx.imm || []).forEach(t => { if (!defs.imm.includes(t)) defs.imm.push(t); }); (x.fx.res || []).forEach(t => { if (!defs.res.includes(t)) defs.res.push(t); }); });
   let dv = Math.max((c.senses || {}).dv || 0, DND_SPECIES_DV[c.species] || 0); on.forEach(x => { if (x.fx.dv) dv = dv ? dv + x.fx.dv : x.fx.dv; });
   const senses = { dv, bs: (c.senses || {}).bs || 0, ts: (c.senses || {}).ts || 0, tr: (c.senses || {}).tr || 0 };
@@ -312,11 +325,12 @@ function dndCalc(c) {
   };
 }
 function dndAttackNums(c, k, a) {
+  if (typeof dndAtkInfo === "function") return dndAtkInfo(c, k, a);   // attackfx.js: class features that change attacks
   const abMod = a.ab === "fin" ? Math.max(k.mod.str, k.mod.dex) : a.ab === "spell" ? (k.spellAb ? k.mod[k.spellAb] : 0) : a.ab === "none" ? 0 : k.mod[a.ab];
-  const hit = abMod + (a.prof ? k.pb : 0) + (a.bonus || 0);
+  const hit = abMod + (a.prof ? k.pb : 0) + (a.bonus || 0); const dmg = a.dmg;
   // weapons add their ability to damage; spell attacks don't unless the spell says so (use the bonus)
   const dmgMod = (a.ab === "spell" || a.ab === "none" ? 0 : abMod) + (a.dmgBonus || 0);
-  return { hit, dmgMod };
+  return { hit, dmgMod, dmg, riders: [], critMin: 20, notes: [] };
 }
 
 /* ---------- dice: "2d6+1d4+3" and the like ---------- */

@@ -16,10 +16,16 @@ installs it from **More games** and keeps it up to date.
 | `src/classdata.js` | Every class's features for levels 1 to 20, class tables, subclasses, feature choices and feats (generated; see below) |
 | `src/catalog.js` | Every SRD spell, the equipment and magic items, and the starting equipment kits (generated) |
 | `src/monsters.js` | The SRD's 330 monster stat blocks, with attack bonuses, damage and save DCs worked out (generated) |
+| `src/beasts.js` | The SRD's Beasts up to CR 2, for companions, familiars and Wild Shape on every page (generated from monsters.js) |
+| `src/statblock.js` | Stat blocks with roll buttons, shared by the Combat tab and the Companions tab |
 | `src/catalogs.js` | The spell and equipment pickers, spell rolls, Wear for armor, and the creator's kits |
 | `src/sheet.js` | The character sheet (Sheet, Spells, Inventory and Details tabs) and the panel beside the map |
 | `src/builder.js` | The character creator: Class, Background, Species, Abilities, Levels (above level 1), Equipment, Name & finish |
 | `src/levelup.js` | The sheet's Features tab, the Level up dialog, and the level choices the creator's Levels step reuses |
+| `src/attackfx.js` | What class features do to attacks: Rage, Sneak Attack, Martial Arts, Divine Smite, Hunter's Mark, Archery, crit range, weapon mastery, Unarmed Strike |
+| `src/companions.js` | The Companions tab: familiars, companions, mounts, summons and Wild Shape forms |
+| `src/homebrew.js` | Homebrew packs: the format, checking packs, adding them to the rules, characters carrying their homebrew, the player's Homebrew window |
+| `src/hbgm.js` | The GM's Homebrew tab: the pack library and editor, and sending packs to players (GM's page only) |
 | `src/extras.js` | Equipping and attuning items and what magic items do, item charges, defenses and senses, the Proficiencies panel, characteristics, backstory and portrait, and the multiclass rows on the Details tab |
 | `src/actions.js` | The Actions tab: attacks, spells, features and items sorted into actions, bonus actions, reactions and other |
 | `src/ddb.js` | Importing a character from D&D Beyond (fetching it, or pasting its data) |
@@ -32,8 +38,8 @@ installs it from **More games** and keeps it up to date.
 | `tests/` | The game's tests, run against a Monolith checkout |
 
 `build.py` joins the source files into one `game.js` in the order listed in `BUNDLES`. Add a new
-source file to that list or it won't be included. `combat.js` (the monsters and the Combat tab) is a
-second bundle that only the GM's page loads, so players don't download the stat blocks.
+source file to that list or it won't be included. `combat.js` (the monsters, the Combat tab and the Homebrew editor) is a
+second bundle that only the GM's page loads, so players don't download the whole bestiary.
 
 ## Working on it
 
@@ -62,6 +68,7 @@ python3 scripts/srd-catalog.py ../fvtt/packs/_source catalog.json      # spells,
 python3 scripts/srd-catalogjs.py catalog.json src/catalog.js
 python3 scripts/srd-monsters.py ../fvtt/packs/_source monsters.json    # monster stat blocks
 python3 scripts/srd-monstersjs.py monsters.json src/monsters.js
+python3 scripts/srd-beasts.py src/monsters.js src/beasts.js            # the beasts players get
 ```
 
 The extractor drops Foundry's own notes about its app, keeping only the rules text.

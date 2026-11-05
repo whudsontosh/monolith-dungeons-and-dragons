@@ -102,7 +102,7 @@ function dndAddSpell(c, ref) {
 function dndAddItem(c, ref, qty = 1) {
   const ex = c.inv.find(x => dndKey(x.name) === dndKey(ref.n));
   if (ex) ex.qty = (ex.qty || 0) + qty;
-  else c.inv.push({ id: uid(), name: ref.n, qty, wt: ref.wt || 0, notes: [ref.cost, ref.rar, ref.att ? "requires attunement" : ""].filter(Boolean).join(" · "), eq: false, att: false, plus: 0, fx: {}, ch: dndChargesIn(ref.t), chUsed: 0, chRest: "dawn" });
+  else c.inv.push({ id: uid(), name: ref.n, qty, wt: ref.wt || 0, notes: [ref.cost, ref.rar, ref.att ? "requires attunement" : ""].filter(Boolean).join(" · "), eq: false, att: false, plus: 0, fx: {}, ch: ref.ch || dndChargesIn(ref.t), chUsed: 0, chRest: ref.chRest != null && ref.ch ? ref.chRest : "dawn" });
   if (ref.wpn && !c.attacks.some(a => dndKey(a.name) === dndKey(ref.n))) {
     const w = ref.wpn; const fin = w.p.includes("Finesse");
     const prof = (() => { const kind = (DND_CLASS_INFO[c.cls] || {}).weapons; if (!kind) return true; if (w.k === "simple" || kind === "martial") return true;

@@ -29,7 +29,7 @@ function dndActionList(c, k) {
   const resFor = n => res.find(r => r.n === n || r.n.startsWith(n + " (") || (n.startsWith("Channel Divinity") && r.n.startsWith("Channel Divinity")));
   // weapon attacks
   const extra = dndClassList(c).some(e => { const v = dndAs(c, e); for (let l = 1; l <= e.level; l++) if (dndGainsAt(v, l).some(g => /^Extra Attack|^Two Extra Attacks|^Three Extra Attacks/.test(g.f.n))) return true; return false; });
-  c.attacks.forEach((a, i) => out.push({ type: "action", kind: "attack", i, a, n: a.name || "Attack", sub: extra ? "Attack action · you can attack more than once" : "Attack action" }));
+  [...c.attacks.map((a, i) => [a, i]), [dndUnarmed(c), "u"]].forEach(([a, i]) => out.push({ type: "action", kind: "attack", i, a, n: a.name || "Attack", sub: extra ? "Attack action · you can attack more than once" : "Attack action" }));
   // spells you can cast now (cantrips and prepared spells)
   c.spells.forEach((s, i) => { if (s.lvl && !s.prep) return; const ref = dndSpellRef(s.name); const ct = ref ? ref.ct : (s.notes || "").split(" · ")[0];
     const type = /^Bonus Action/i.test(ct) ? "bonus" : /^Reaction/i.test(ct) ? "reaction" : /^Action/i.test(ct) ? "action" : "other";
@@ -59,8 +59,8 @@ function dndActionsTab(c, k) {
   const row = x => {
     const key = `${c.id}:${x.kind}:${x.n}`; const open = !!ui.dndActOpen[key]; let btns = "", body = "";
     if (x.kind === "attack") { const n = dndAttackNums(c, k, x.a); btns = `<button class="btn sm dnd-hit" data-act="dnd-attack" data-i="${x.i}">${sgn(n.hit)} to hit</button>
-        <button class="btn sm" data-act="dnd-dmgroll" data-i="${x.i}" ${x.a.dmg ? "" : "disabled"}>${esc([x.a.dmg || "—", n.dmgMod ? sgn(n.dmgMod) : ""].join(" ").trim())}${x.a.type ? " " + esc(x.a.type) : ""}</button>`;
-      body = x.a.notes ? `<p class="faint dnd-small" style="margin:0">${esc(x.a.notes)}</p>` : ""; }
+        <button class="btn sm" data-act="dnd-dmgroll" data-i="${x.i}" ${n.dmg || x.a.unarmed ? "" : "disabled"}>${esc(n.dmg ? [n.dmg, n.dmgMod ? sgn(n.dmgMod) : ""].join(" ").trim() : String(Math.max(1, n.dmgMod)))}${x.a.type ? " " + esc(x.a.type) : ""}</button>`;
+      body = `${x.a.notes || n.notes.length ? `<p class="faint dnd-small" style="margin:0">${esc([x.a.notes, ...n.notes].filter(Boolean).join(" · "))}</p>` : ""}${n.riders.length || n.mast ? `<div class="row dnd-riders">${dndRiderBtns(c, n, x.i)}</div>` : ""}`; }
     if (x.kind === "spell") { const dice = x.ref ? dndSpellDice(c, k, x.ref, x.s) : null; const cs = dndSpellCaster(k, x.s);
       btns = `${x.ref && x.ref.dmg && x.ref.dmg.kind === "save" ? `<span class="chip amber">DC ${cs.dc}</span>` : x.ref && /spell attack/i.test(x.ref.t) ? `<button class="btn sm dnd-hit" data-act="dnd-spellatk" data-c="${esc(cs.cls || "")}">${sgn(cs.atk)} to hit</button>` : ""}
         ${dice ? `<button class="btn sm" data-act="dnd-sproll" data-i="${x.i}">${esc(dice.d)}</button>` : ""}${x.s.lvl ? `<button class="btn sm ghost" data-act="dnd-cast" data-i="${x.i}" ${dndDis(c)}>Cast</button>` : ""}`;
