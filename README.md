@@ -20,6 +20,9 @@ installs it from **More games** and keeps it up to date.
 | `src/sheet.js` | The character sheet (Sheet, Spells, Inventory and Details tabs) and the panel beside the map |
 | `src/builder.js` | The character creator: Class, Background, Species, Abilities, Levels (above level 1), Equipment, Name & finish |
 | `src/levelup.js` | The sheet's Features tab, the Level up dialog, and the level choices the creator's Levels step reuses |
+| `src/extras.js` | Equipping and attuning items and what magic items do, item charges, defenses and senses, the Proficiencies panel, characteristics, backstory and portrait, and the multiclass rows on the Details tab |
+| `src/actions.js` | The Actions tab: attacks, spells, features and items sorted into actions, bonus actions, reactions and other |
+| `src/ddb.js` | Importing a character from D&D Beyond (fetching it, or pasting its data) |
 | `src/resources.js` | Class resources (Rage, Channel Divinity, Second Wind, Focus Points…) and what rests give back |
 | `src/gm.js` | The GM's party table, the GM's view of a sheet, and health rings on map tokens |
 | `src/gmcombat.js` | The GM's Combat tab: initiative, turns, monsters from the SRD, damage, stat blocks, encounter difficulty |

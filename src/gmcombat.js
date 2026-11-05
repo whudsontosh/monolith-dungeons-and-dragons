@@ -17,7 +17,7 @@ Object.assign(ui, { dndMonPick: null, dndCbOpen: {}, dndCbAmt: {} });
 
 function dndCombat() { if (!st.combat || !Array.isArray(st.combat.list)) st.combat = { round: 1, turn: 0, list: [] }; return st.combat; }
 function dndCbHp(e) { if (e.kind === "pc") { const c = pc(e.ref); if (!c) return { hp: 0, max: 0, temp: 0 }; const k = dndCalc(c); return { hp: k.hp, max: k.hpMax, temp: c.hpTemp || 0, c }; } return { hp: e.hp, max: e.max, temp: e.temp || 0 }; }
-function dndCbAc(e) { if (e.kind === "pc") { const c = pc(e.ref); return c ? c.ac : 10; } return e.ac; }
+function dndCbAc(e) { if (e.kind === "pc") { const c = pc(e.ref); return c ? dndCalc(c).ac : 10; } return e.ac; }
 const dndCbOut = e => e.kind === "mon" && e.hp <= 0;
 function dndCbSort() { const cb = dndCombat(); const cur = cb.list[cb.turn];
   cb.list.sort((a, b) => (b.init ?? -99) - (a.init ?? -99) || (b.mod || 0) - (a.mod || 0) || a.name.localeCompare(b.name));
@@ -112,7 +112,7 @@ function dndCombatTab() {
     const conds = e.kind === "pc" ? (h.c ? h.c.conditions : []) : e.cond;
     return `<div class="dnd-cbrow ${on ? "on" : ""} ${out ? "out" : ""} ${e.kind}" data-cid-row="${esc(e.cid)}">
       <input type="number" class="dnd-cbinit" data-act-change="dnd-cbinit" data-c="${esc(e.cid)}" value="${e.init ?? ""}" placeholder="—" aria-label="Initiative for ${esc(e.name)}">
-      <div class="dnd-cbname"><b>${esc(e.name)}</b><span class="faint dnd-small">${e.kind === "pc" ? esc([h.c && h.c.cls, h.c && `level ${h.c.level}`].filter(Boolean).join(" ")) : m ? `CR ${dndCr(m.cr)} · ${esc(m.type)}` : "Custom"}${e.mod != null ? ` · init ${sgn(e.mod)}` : ""}</span>
+      <div class="dnd-cbname"><b>${esc(e.name)}</b><span class="faint dnd-small">${e.kind === "pc" ? esc([h.c && dndClassLine(h.c), h.c && `level ${h.c.level}`].filter(Boolean).join(" ")) : m ? `CR ${dndCr(m.cr)} · ${esc(m.type)}` : "Custom"}${e.mod != null ? ` · init ${sgn(e.mod)}` : ""}</span>
         ${conds && conds.length ? `<span class="row" style="gap:4px">${conds.map(c => `<span class="chip red">${esc(c)}</span>`).join("")}</span>` : ""}</div>
       <span class="dnd-cbac" title="Armor Class"><b>${ac}</b><span class="label">AC</span></span>
       <div class="dnd-cbhp"><b>${h.hp}</b><span class="faint"> / ${h.max}</span>${h.temp ? ` <span class="chip blue">+${h.temp}</span>` : ""}${out ? ` <span class="chip red">${e.kind === "pc" ? "Dead" : "Down"}</span>` : ""}

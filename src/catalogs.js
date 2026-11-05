@@ -18,27 +18,29 @@ function dndSpellLine(s) { return [s.ct, s.rg, (s.cmp || "").replace(/ \(.*\)$/,
 /* the highest spell level the character can cast now */
 function dndMaxSpellLevel(k) { let m = 0; for (let l = 1; l <= 9; l++) if (k.slots[l]) m = l; if (k.pact[0]) m = Math.max(m, k.pact[1]); return m; }
 /* the main damage or healing roll of a spell, with the spellcasting modifier and cantrip scaling filled in */
-function dndSpellDice(c, k, ref) {
-  if (!ref || !ref.dmg) return null;
-  let d = ref.dmg.d.replace(/\bmod\b/g, String(k.spellAb ? k.mod[k.spellAb] : 0)).replace(/\s+/g, "");
+/* the class a spell is cast with (multiclass characters tag their spells), with its ability, DC and attack */
+function dndSpellCaster(k, s) { return (k.casting || []).find(x => x.cls === (s && s.cls)) || (k.casting || [])[0] || { ab: k.spellAb, dc: k.spellDc, atk: k.spellAtk }; }
+function dndSpellDice(c, k, ref, s) {
+  if (!ref || !ref.dmg) return null; const cs = dndSpellCaster(k, s); const ab = (k.casting || []).length > 1 ? cs.ab : k.spellAb;
+  let d = ref.dmg.d.replace(/\bmod\b/g, String(ab ? k.mod[ab] : 0)).replace(/\s+/g, "");
   let note = "";
   if (ref.l === 0) { const tier = c.level >= 17 ? 4 : c.level >= 11 ? 3 : c.level >= 5 ? 2 : 1;
     if (tier > 1) { if (ref.n === "Eldritch Blast") note = `${tier} beams: roll each one`; else d = d.replace(/^(\d+)d(\d+)/, (_, n, s) => `${Number(n) * tier}d${s}`); } }
   return { d, note };
 }
 function dndSpellRoll(c, i) {
-  const s = c.spells[i]; const ref = dndSpellRef(s && s.name); const k = dndCalc(c); const x = dndSpellDice(c, k, ref); if (!x) return;
+  const s = c.spells[i]; const ref = dndSpellRef(s && s.name); const k = dndCalc(c); const x = dndSpellDice(c, k, ref, s); if (!x) return; const dc = (k.casting || []).length > 1 ? dndSpellCaster(k, s).dc : k.spellDc;
   const r = dndRollExpr(x.d, 0, false); if (!r) return;
   const dm = ref.dmg; const heal = dm.kind === "heal";
   const tags = [dm.type ? { t: dm.type, c: "ink" } : null, heal ? { t: "Healing", c: "green" } : null,
-    dm.kind === "save" && dm.save ? { t: `DC ${k.spellDc} ${DND_AB_NAME[dm.save]} save`, c: "amber" } : null, x.note ? { t: x.note, c: "blue" } : null].filter(Boolean);
+    dm.kind === "save" && dm.save ? { t: `DC ${dc} ${DND_AB_NAME[dm.save]} save`, c: "amber" } : null, x.note ? { t: x.note, c: "blue" } : null].filter(Boolean);
   Dice.raw(`${ref.n}: ${heal ? "healing" : "damage"}`, r.text, r.total, dndName(c), tags);
 }
 
 /* ---------- spell details on the Spells tab ---------- */
 function dndSpellExtras(c, s, i, k) {
   const ref = dndSpellRef(s.name); if (!ref) return { btns: "", body: "" };
-  const open = !!ui.dndSpOpen[c.id + ":" + s.id]; const x = dndSpellDice(c, k, ref);
+  const open = !!ui.dndSpOpen[c.id + ":" + s.id]; const x = dndSpellDice(c, k, ref, s);
   const btns = `${x ? `<button class="btn sm ghost" data-act="dnd-sproll" data-i="${i}" title="Roll ${esc(x.d)}">${esc(x.d)}</button>` : ""}
     <button class="icon-btn dnd-info ${open ? "on" : ""}" data-act="dnd-spinfo" data-id="${esc(s.id)}" aria-label="About ${esc(ref.n)}" aria-pressed="${open}">i</button>`;
   const body = open ? `<div class="dnd-spdetail"><div class="row" style="gap:6px;margin-bottom:6px"><span class="chip ink">${ref.l ? dndOrdinal(ref.l) + "-level" : "Cantrip"} ${esc(ref.sch)}</span>${ref.conc ? `<span class="chip blue">Concentration</span>` : ""}${ref.rit ? `<span class="chip green">Ritual</span>` : ""}${ref.dmg && ref.dmg.kind === "save" ? `<span class="chip amber">${esc(DND_AB_NAME[ref.dmg.save] || "")} save, DC ${k.spellDc}</span>` : ""}${ref.dmg && ref.dmg.kind === "attack" ? `<span class="chip amber">Spell attack ${sgn(k.spellAtk)}</span>` : ""}</div>
@@ -93,13 +95,14 @@ MODALS.dndpick = () => { const p = ui.pick; if (!p || !dndPickChar()) return nul
 
 function dndAddSpell(c, ref) {
   if (c.spells.some(s => dndKey(s.name) === dndKey(ref.n))) return;
-  c.spells.push({ id: uid(), lvl: ref.l, name: ref.n, prep: ref.l > 0, notes: dndSpellLine(ref) });
+  const k = dndCalc(c); const p = ui.pick || {}; const cls = (k.casting || []).length > 1 ? ((k.casting.find(x => x.cls === p.cls) || k.casting.find(x => ref.cls.includes(x.cls)) || k.casting[0]).cls) : "";
+  c.spells.push({ id: uid(), lvl: ref.l, name: ref.n, prep: ref.l > 0, notes: dndSpellLine(ref), cls });
 }
 /* adds an item (and an attack for a weapon) */
 function dndAddItem(c, ref, qty = 1) {
   const ex = c.inv.find(x => dndKey(x.name) === dndKey(ref.n));
   if (ex) ex.qty = (ex.qty || 0) + qty;
-  else c.inv.push({ id: uid(), name: ref.n, qty, wt: ref.wt || 0, notes: [ref.cost, ref.rar, ref.att ? "requires attunement" : ""].filter(Boolean).join(" · ") });
+  else c.inv.push({ id: uid(), name: ref.n, qty, wt: ref.wt || 0, notes: [ref.cost, ref.rar, ref.att ? "requires attunement" : ""].filter(Boolean).join(" · "), eq: false, att: false, plus: 0, fx: {}, ch: dndChargesIn(ref.t), chUsed: 0, chRest: "dawn" });
   if (ref.wpn && !c.attacks.some(a => dndKey(a.name) === dndKey(ref.n))) {
     const w = ref.wpn; const fin = w.p.includes("Finesse");
     const prof = (() => { const kind = (DND_CLASS_INFO[c.cls] || {}).weapons; if (!kind) return true; if (w.k === "simple" || kind === "martial") return true;
@@ -140,8 +143,6 @@ Object.assign(A, {
   "dnd-sproll": dndAct((c, el) => { dndSpellRoll(c, Number(el.dataset.i)); return false; }, false),
   "dnd-spinfo": dndAct((c, el) => { const key = c.id + ":" + el.dataset.id; ui.dndSpOpen[key] = !ui.dndSpOpen[key]; return false; }, false),
   "dnd-itinfo": dndAct((c, el) => { const key = c.id + ":" + el.dataset.id; ui.dndItOpen[key] = !ui.dndItOpen[key]; return false; }, false),
-  "dnd-wear": dndAct((c, el) => { const it = c.inv[Number(el.dataset.i)]; const ref = it && dndItemRef(it.name); if (!ref || !ref.arm) return false;
-    const r = dndWearAc(c, ref); c.ac = r.ac; showNotice(`Armor Class set to ${r.ac}${r.shield ? `, with your ${r.shield.n}` : ""}.`); }),
   "dnd-b-kit": dndAct((c, el) => { const b = dndB(c); const k = el.dataset.k; const v = Number(el.dataset.v); b[k] = b[k] === v ? -1 : v; dndApplyKits(b); }),
 });
 A["dnd-pickadd"] = el => {

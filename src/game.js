@@ -38,10 +38,10 @@ function dndCard(c) {
       initial: (b.name || "?").charAt(0).toUpperCase(), chips: [{ t: `Draft · step ${i + 1} of ${steps.length}`, c: "blue" }], draft: true, openLabel: "Continue building" }; }
   const k = dndCalc(c); const done = !!(c.name && c.cls);
   return {
-    name: dndName(c), sub: [`Level ${c.level}`, c.species, c.cls].filter(Boolean).join(" "),
+    name: dndName(c), sub: [`Level ${c.level}`, c.species, dndClassLine(c)].filter(Boolean).join(" "),
     color: dndColor(c), initial: (c.name || "?").trim().charAt(0).toUpperCase() || "?",
     chips: !done ? [{ t: "Draft", c: "blue" }] : k.dead ? [{ t: "Dead", c: "red" }] : k.hp === 0 ? [{ t: "Dying", c: "red" }] : c.conditions.slice(0, 2).map(x => ({ t: x, c: "red" })),
-    stats: [["AC", c.ac], ["HP", `${k.hp}/${k.hpMax}`], ["Init", sgn(k.init)], ["Pass. Perc.", k.passive.perception]],
+    stats: [["AC", k.ac], ["HP", `${k.hp}/${k.hpMax}`], ["Init", sgn(k.init)], ["Pass. Perc.", k.passive.perception]],
     meter: { frac: k.hpMax ? k.hp / k.hpMax : 0, title: `Hit points ${k.hp} of ${k.hpMax}` },
     draft: !done, openLabel: done ? "Open sheet" : "Continue",
   };
@@ -62,7 +62,7 @@ Monolith.registerGame({
       isFinished: c => !!(c && !c.build && c.name && c.cls),
       joined: c => { c.done = true; },
       label: c => c.build ? (c.build.name || "New character") : dndName(c), card: dndCard, sample: DND_SAMPLE,
-      summary: c => { try { const k = dndCalc(c); return `Level ${c.level} ${c.cls || ""} · HP ${k.hp}/${k.hpMax} · ${c.inv.length} items · ${c.spells.length} spells`; } catch (e) { return ""; } },
+      summary: c => { try { const k = dndCalc(c); return `Level ${c.level} ${dndClassLine(c)} · HP ${k.hp}/${k.hpMax} · ${c.inv.length} items · ${c.spells.length} spells`; } catch (e) { return ""; } },
       copy: src => { const c = clone(src); c.name = src.name + " (copy)"; ["attacks", "spells", "inv"].forEach(l => c[l].forEach(x => { x.id = uid(); })); return c; },
     },
     player: {
@@ -71,6 +71,7 @@ Monolith.registerGame({
       views: { sheet: c => dndSheetView(c), build: c => dndBuilderView(c) }, openView: c => c.build ? "build" : "sheet",
       onOpen: c => { ui.dndTab = c.cls ? "sheet" : "details"; ui.dndEdit = null; ui.dndAdv = "normal"; },
       tablePanel: c => dndTablePanel(c),
+      navExtra: () => `<button data-act="ddb-open" title="Bring a character over from D&D Beyond">Import from D&D Beyond</button>`,
     },
     campaign: {
       defaults: () => ({ combat: { round: 1, turn: 0, list: [] } }),

@@ -1,0 +1,146 @@
+"""Multiclassing (the Level up dialog and the creator's Levels step), combined spell slots, hit dice by
+class, equipping and attuning magic items, item charges, limited-use trackers, defenses and senses,
+the Actions tab, and characteristics with a portrait."""
+import asyncio, sys, os, base64
+from playwright.async_api import async_playwright
+from harness import *
+
+PNG = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAIAAABLbSncAAAAH0lEQVR4nGP8z4AJmIhgMDIwMDD8Z2CAESgCqHYiAQB3qQMHfh2GTQAAAABJRU5ErkJggg==")
+
+async def main():
+    async with async_playwright() as p:
+        b = await p.chromium.launch()
+        pl = await page(b, "P", "player.html")
+        async def click(sel): await pl.click(sel); await pl.wait_for_timeout(130)
+        async def shot(n): await pl.screenshot(path=OUT + f"/{n}.png", full_page=True)
+        ev = pl.evaluate
+
+        # ---------- a Fighter 4 multiclasses into Wizard ----------
+        await click(".card:has-text('Ilyra Venn') [data-act=open-char]"); await click("[data-act=copy-sample]")
+        await ev("""()=>{const c=curChar();Object.assign(c,{name:'Brannoc',cls:'Fighter',subclass:'Champion',level:4,spells:[],acAuto:true,ab:{str:16,dex:12,con:14,int:13,wis:10,cha:8}});
+          c.saveProf={str:true,dex:false,con:true,int:false,wis:false,cha:false};saveChar(c,true);render()}""")
+        await pl.wait_for_timeout(150)
+        await click("[data-act=dnd-levelup] >> nth=0")
+        ok(await pl.locator(".modal [data-act=dnd-lv-set][data-k=cls]:has-text('Fighter 4 → 5')").count() == 1, "the Level up dialog offers the current class")
+        await pl.select_option(".modal .dnd-mcsel", "Wizard"); await pl.wait_for_timeout(150)
+        txt = (await pl.inner_text(".modal")).lower()
+        ok("wizard 0 → 1" in txt and "multiclass" in txt and "roll a d6" in txt, "picking Wizard levels that class from 0 to 1, with a d6 hit die")
+        await shot("m1-multiclass-dialog")
+        await click("[data-act=dnd-lv-apply]")
+        c = await ev("(()=>{const c=curChar();const k=dndCalc(c);return [c.level,c.multi,k.slots.slice(1,3),k.hdPools.map(h=>[h.cls,h.total,h.hd]),k.hpMax,k.casting.map(x=>[x.cls,x.dc])]})()"); print(c)
+        ok(c[0] == 5 and c[1] == [{"cls": "Wizard", "subclass": "", "level": 1}], "now Fighter 4 / Wizard 1, character level 5")
+        ok(c[2][0] == 2 and len(c[2]) == 1 and c[5] == [["Wizard", 8 + 3 + 1]], "Wizard 1 gives two 1st-level slots, cast with Intelligence (DC 12)")
+        ok(c[3] == [["Fighter", 4, 10], ["Wizard", 1, 6]] and c[4] == 12 + 3 * 8 + (4 + 2), "hit dice by class (4d10 + 1d6) and HP 12 + 3×8 + 6 = 42")
+        ok("Wizard (multiclass): None" in await ev("curChar().profs"), "the multiclass proficiencies are noted")
+        ok(await pl.locator(".dnd-head h1 small:has-text('Fighter 4 (Champion) / Wizard 1')").count() == 1, "the header shows both classes")
+        # a third class that also casts: Cleric (needs Wisdom 13, which Brannoc doesn't have)
+        await click("[data-act=dnd-levelup] >> nth=0"); await pl.select_option(".modal .dnd-mcsel", "Cleric"); await pl.wait_for_timeout(150)
+        ok("The rules need Wisdom 13" in await pl.inner_text(".modal"), "the dialog warns when the multiclass requirement isn't met")
+        await click(".modal [data-act=dnd-lv-apply]")
+        k = await ev("(()=>{const k=dndCalc(curChar());return [k.kind,k.slots.slice(1,3),k.casting.map(x=>x.cls)]})()"); print(k)
+        ok(k[0] == "multi" and k[1][0] == 3 and len(k[1]) == 1 and sorted(k[2]) == ["Cleric", "Wizard"], "two casting classes add up: caster level 2 gives three 1st-level slots")
+        await click("[data-act=dnd-tab][data-t=spells]")
+        ok(await pl.locator(".dnd-tile:has-text('Wizard · Int')").count() == 1 and await pl.locator(".dnd-tile:has-text('Cleric · Wis')").count() == 1, "the Spells tab shows each class's DC and attack")
+        await click("[data-act=dnd-pickspells]"); await pl.fill("#dnd-pick-q", "magic missile"); await pl.wait_for_timeout(200)
+        await click(".dnd-pickrow:has-text('Magic Missile') [data-act=dnd-pickadd]"); await click("[data-act=close-modal]")
+        ok(await ev("curChar().spells.find(s=>s.name==='Magic Missile').cls") in ("Wizard", "Cleric") and await pl.locator(".dnd-spell.multi select.dnd-spcls").count() == 1, "spells get a class to cast them with")
+        await shot("m2-spells")
+        await click("[data-act=dnd-tab][data-t=features]")
+        ok(await pl.locator(".panel h3:text-is('Fighter features')").count() == 1 and await pl.locator(".panel h3:text-is('Wizard features')").count() == 1 and await pl.locator(".panel h3:text-is('Cleric features')").count() == 1, "the Features tab has a section per class")
+        await shot("m3-features")
+        await click("[data-act=dnd-tab][data-t=sheet]")
+        await click("[data-act=dnd-spendhd][data-c=Wizard]")
+        ok(await ev("curChar().hdBy") == {"Wizard": 1} and await pl.locator("[data-act=dnd-spendhd][data-c=Wizard][disabled]").count() == 1, "spending the Wizard's one hit die")
+        await click("[data-act=dnd-long]")
+        ok(await ev("curChar().hdBy") == {}, "a long rest gives the hit dice back")
+        # Details tab edits the class levels
+        await click("[data-act=dnd-tab][data-t=details]")
+        await pl.fill("[data-act-change=dnd-mclvl][data-j='0']", "2"); await pl.press("[data-act-change=dnd-mclvl][data-j='0']", "Tab"); await pl.wait_for_timeout(150)
+        ok(await ev("[curChar().level,curChar().multi[0].level]") == [7, 2], "changing the Wizard level on the Details tab changes the character level")
+        await click("[data-act=dnd-mcdel][data-j='1']")
+        ok(await ev("[curChar().level,curChar().multi.map(m=>m.cls).join()]") == [6, "Wizard"], "removing Cleric takes its level away")
+
+        # ---------- magic items ----------
+        await ev("""()=>{const c=curChar();['Chain Mail','Cloak of Protection','Ring of Protection','Gauntlets of Ogre Power','Wand of Magic Missiles','Amulet of Health'].forEach(n=>dndAddItem(c,dndItemRef(n)));saveChar(c,true);render()}""")
+        await click("[data-act=dnd-tab][data-t=inv]")
+        row = lambda n: f"tr:has(input[value='{n}'])"
+        await click(row("Chain Mail") + " [data-act=dnd-equip]")
+        ok(await ev("dndCalc(curChar()).ac") == 16, "chain mail: AC 16")
+        await click(row("Cloak of Protection") + " [data-act=dnd-equip]")
+        ok(await ev("dndCalc(curChar()).ac") == 16, "an unattuned cloak does nothing yet")
+        await click(row("Cloak of Protection") + " [data-act=dnd-attune]")
+        ok(await ev("[dndCalc(curChar()).ac,dndCalc(curChar()).save.dex]") == [17, 1 + 1], "attuned: +1 AC and +1 to saves")
+        for n in ["Ring of Protection", "Gauntlets of Ogre Power"]: await click(row(n) + " [data-act=dnd-attune]")
+        ok(await ev("dndCalc(curChar()).ab.str") == 19 and await pl.locator(".dnd-abfx").count() == 0, "Gauntlets of Ogre Power make Strength 19")
+        await click(row("Amulet of Health") + " [data-act=dnd-attune]")
+        ok(await ev("curChar().inv.filter(i=>i.att).length") == 3 and await pl.locator(".chip:has-text('Attuned 3 / 3')").count() == 1, "a fourth attunement is refused")
+        w = await ev("curChar().inv.find(i=>i.name==='Wand of Magic Missiles')")
+        ok(w["ch"] == 7, "the wand comes with its 7 charges")
+        await click(row("Wand of Magic Missiles") + " [data-act=dnd-charge][data-j='6']")
+        ok(await ev("curChar().inv.find(i=>i.name==='Wand of Magic Missiles').chUsed") == 1, "spending a charge")
+        await click(row("Chain Mail") + " [data-act=dnd-itinfo]")
+        await pl.select_option(row("Chain Mail") + " [data-dnd$='.plus']", "2"); await pl.wait_for_timeout(150)
+        ok(await ev("dndCalc(curChar()).ac") == 16 + 2 + 1 + 1, "chain mail +2 with the cloak and ring: AC 20")
+        await shot("m4-inventory")
+        await click("[data-act=dnd-tab][data-t=sheet]")
+        ok(await pl.locator(".dnd-tile:has-text('Armor Class') b.dnd-big:text-is('20')").count() == 1, "the sheet shows the worked-out AC")
+        await click("[data-act=dnd-acmode]")
+        ok(await ev("[curChar().acAuto,curChar().ac]") == [False, 20], "switching to a hand-set AC keeps the number")
+        await click("[data-act=dnd-acmode]")
+
+        # ---------- limited uses ----------
+        await click("[data-act=dnd-trkadd]")
+        await pl.fill("[data-dnd='trackers.0.n']", "Boots of the Winding Path"); await pl.fill("[data-dnd='trackers.0.max']", "3")
+        await pl.select_option("[data-dnd='trackers.0.rest']", "short"); await pl.wait_for_timeout(150)
+        await click("[data-act=dnd-edit][data-id='" + await ev("curChar().trackers[0].id") + "']")
+        await click("[data-act=dnd-trk][data-i='0'][data-j='2']"); await click("[data-act=dnd-trk][data-i='0'][data-j='1']")
+        ok(await ev("curChar().trackers[0].used") == 2, "a tracker of your own: 2 of 3 used")
+        await click("[data-act=dnd-short]")
+        ok(await ev("curChar().trackers[0].used") == 0, "a short rest resets it")
+
+        # ---------- defenses, story, portrait ----------
+        await click("[data-act=dnd-tab][data-t=details]")
+        await click("[data-act=dnd-def][data-k=res][data-v=Fire]"); await pl.fill("[data-dnd='senses.dv']", "60")
+        await pl.fill("[data-dnd='traits.pers']", "Hums when nervous."); await pl.fill("[data-dnd='phys.eyes']", "Amber")
+        await pl.set_input_files("[data-act-change=dnd-portrait]", files=[{"name": "me.png", "mimeType": "image/png", "buffer": PNG}]); await pl.wait_for_timeout(400)
+        c = await ev("(()=>{const c=curChar();return [c.defs.res,c.senses.dv,c.traits.pers,c.phys.eyes,c.portrait.slice(0,23)]})()"); print(c)
+        ok(c == [["Fire"], 60, "Hums when nervous.", "Amber", "data:image/jpeg;base64,"], "resistance, darkvision, personality, looks and a portrait")
+        await shot("m5-details")
+        await click("[data-act=dnd-tab][data-t=sheet]")
+        ok(await pl.locator(".panel:has(h3:text-is('Defenses & senses')) .chip:has-text('Fire')").count() == 1 and await pl.locator(".dnd-head-portrait").count() == 1, "the sheet shows defenses and the portrait")
+
+        # ---------- the Actions tab ----------
+        await click("[data-act=dnd-tab][data-t=actions]")
+        acts = await ev("dndActionList(curChar(),dndCalc(curChar())).map(x=>[x.type,x.n])"); print(acts)
+        ok(["bonus", "Second Wind"] in acts and ["other", "Action Surge"] in acts and ["action", "Magic Missile"] in acts and ["action", "Wand of Magic Missiles"] in acts, "attacks, spells, features and items sorted by how they're used")
+        await click("[data-act=dnd-actadd]"); await pl.fill("[data-dnd='acts.0.n']", "Shove"); await pl.select_option("[data-dnd='acts.0.type']", "bonus"); await pl.wait_for_timeout(150)
+        ok(["bonus", "Shove"] in await ev("dndActionList(curChar(),dndCalc(curChar())).map(x=>[x.type,x.n])"), "a written-in bonus action")
+        await click("[data-act=dnd-actfilter][data-v=bonus]")
+        ok(await pl.locator(".dnd-actgrid .panel").count() == 1, "filtering to bonus actions")
+        await shot("m6-actions")
+
+        # ---------- multiclassing in the creator ----------
+        await click("nav [data-act=go-roster]"); await click("[data-act=new-character] >> nth=0")
+        await click("[data-act=dnd-b-pick][data-k=cls][data-v=Fighter]")
+        await pl.select_option("[data-dnd='build.level']", "3"); await pl.wait_for_timeout(150)
+        await click("[data-act=dnd-b-choice][data-pool='Fighting Style'][data-v=Defense]")
+        await click("[data-act=dnd-b-toggle][data-k=clsSkills][data-v=athletics]"); await click("[data-act=dnd-b-toggle][data-k=clsSkills][data-v=perception]")
+        await ev("""()=>{const c=curChar();Object.assign(c.build,{bg:'Soldier',plus2:'str',plus1:'con',species:'Orc',method:'array',name:'Kesh'});
+          const ci=DND_CLASS_INFO.Fighter;const t=new Set();DND_ABILITIES.forEach(([a])=>{const i=DND_STANDARD_ARRAY.findIndex((v,j)=>v===ci.array[a]&&!t.has(j));t.add(i);c.build.arr[a]=i});saveChar(c,true);render()}""")
+        await pl.wait_for_timeout(200); await click(".dnd-steps [data-s=levels]")
+        await click("[data-act=dnd-b-lvopen][data-n='3']")
+        await pl.select_option("[data-act-change=dnd-lv][data-w='b:3'][data-k=cls]", "Rogue"); await pl.wait_for_timeout(200)
+        miss = await ev("dndLevelsMissing(curChar())"); print(miss)
+        ok(miss[1] and any("expertise" in m for m in miss[1]), "level 3 as Rogue 1 asks for expertise")
+        for s in ["athletics", "perception"]: await click(f"[data-act=dnd-lv-exp][data-w='b:3'][data-v={s}]")
+        miss = await ev("dndLevelsMissing(curChar())"); print(miss)
+        await shot("m7-creator-multiclass")
+        ok(all(not m for m in miss), "every level's choices made")
+        await click("[data-act=dnd-b-step][data-s=review]"); await click("[data-act=dnd-b-finish]"); await pl.wait_for_timeout(300)
+        c = await ev("(()=>{const c=curChar();return [c.level,c.cls,c.multi,c.skills.athletics,c.lvlCls,dndCalc(c).hpMax]})()"); print(c)
+        ok(c[0] == 3 and c[1] == "Fighter" and c[2] == [{"cls": "Rogue", "subclass": "", "level": 1}] and c[3] == 2 and c[4] == {"3": "Rogue"}, "the finished character is Fighter 2 / Rogue 1 with expertise")
+        print("errors:", errs); ok(not errs, "no page errors")
+        await b.close()
+    sys.exit(finish())
+
+asyncio.run(main())

@@ -82,15 +82,16 @@ function dndTile(label, value, extra = "") { return `<div class="dnd-tile">${val
 /* ---------- the sheet ---------- */
 function dndSheetView(c) {
   const k = dndCalc(c); const tab = ui.dndTab;
-  const sub = [`Level ${c.level}`, c.species, [c.cls, c.subclass && `(${c.subclass})`].filter(Boolean).join(" ")].filter(Boolean).join(" · ") || "New character";
-  const tabs = [["sheet", "Sheet"], ["features", "Features"], ["spells", "Spells"], ["inv", "Inventory"], ["details", "Details"]];
+  const sub = [`Level ${c.level}`, c.species, dndClassList(c).filter(e => e.cls).map(e => [e.cls, dndIsMulti(c) ? e.level : "", e.subclass && `(${e.subclass})`].filter(Boolean).join(" ")).join(" / ")].filter(Boolean).join(" · ") || "New character";
+  const tabs = [["sheet", "Sheet"], ["actions", "Actions"], ["features", "Features"], ["spells", "Spells"], ["inv", "Inventory"], ["details", "Details"]];
   const back = ROLE === "gm" ? `<button class="btn sm ghost" data-act="close-pc">← The party</button>` : "";
   const sm = ROLE !== "gm" ? sample() : null; const isSample = !!(sm && sm.id === c.id);
   return `<div class="dnd" data-cid="${esc(c.id)}">
     ${back ? `<div class="row" style="margin-bottom:12px">${back}</div>` : ""}
     ${isSample ? `<div class="banner" style="margin-bottom:16px"><b>This is the example character.</b> Copy it to your characters to edit it. <button class="btn sm primary" data-act="copy-sample">Copy to my characters</button></div>` : ""}
     <div class="roster-head dnd-head">
-      <h1><small>${esc(sub)}</small>${esc(dndName(c))}</h1>
+      <div class="row" style="gap:16px;flex-wrap:nowrap;min-width:0">${c.portrait ? `<div class="dnd-portrait dnd-head-portrait" style="background-image:url('${esc(c.portrait)}')" role="img" aria-label="Portrait"></div>` : ""}
+      <h1><small>${esc(sub)}</small>${esc(dndName(c))}</h1></div>
       <div class="dnd-headtools">
         <div class="seg" role="group" aria-label="Next d20 roll" title="Applies to your next d20 roll. Or Shift+click a roll for advantage, Ctrl+click for disadvantage.">
           ${[["normal", "Normal"], ["adv", "Advantage"], ["dis", "Disadvantage"]].map(([m, l]) => `<button class="${ui.dndAdv === m ? "on" : ""}" data-act="dnd-adv" data-m="${m}">${l}</button>`).join("")}
@@ -102,7 +103,7 @@ function dndSheetView(c) {
       </div>
     </div>
     <nav class="dnd-tabs" aria-label="Sheet sections">${tabs.map(([id, l]) => `<button class="${tab === id ? "on" : ""}" data-act="dnd-tab" data-t="${id}">${l}</button>`).join("")}</nav>
-    ${tab === "features" ? dndFeaturesTab(c, k) : tab === "spells" ? dndSpellsTab(c, k) : tab === "inv" ? dndInvTab(c, k) : tab === "details" ? dndDetailsTab(c, k) : dndMainTab(c, k)}
+    ${tab === "actions" ? dndActionsTab(c, k) : tab === "features" ? dndFeaturesTab(c, k) : tab === "spells" ? dndSpellsTab(c, k) : tab === "inv" ? dndInvTab(c, k) : tab === "details" ? dndDetailsTab(c, k) : dndMainTab(c, k)}
   </div>`;
 }
 
@@ -112,6 +113,7 @@ function dndMainTab(c, k) {
       <span class="label">${n}</span>
       <button class="dnd-mod" data-act="dnd-check" data-a="${a}" title="Roll a ${n} check">${sgn(k.mod[a])}</button>
       ${dndNum(c, `ab.${a}`, c.ab[a], `min="1" max="30" aria-label="${n} score"`)}
+      ${k.ab[a] !== c.ab[a] ? `<span class="chip blue dnd-abfx" title="From an equipped item">${k.ab[a]} with items</span>` : ""}
     </div>`).join("");
   const saves = DND_ABILITIES.map(([a, n]) => `<div class="dnd-li">
       ${dndPip(c.saveProf[a], "dnd-saveprof", `data-a="${a}"`, `Proficient in ${n} saves`)}
@@ -126,7 +128,8 @@ function dndMainTab(c, k) {
   return `<div class="dnd-grid">
     <div class="dnd-col">
       <div class="dnd-abs">${abil}</div>
-      <section class="panel"><div class="panel-h"><h3>Saving throws</h3></div><div class="panel-b dnd-list">${saves}</div></section>
+      <section class="panel"><div class="panel-h"><h3>Saving throws</h3>${k.saveB ? `<span class="chip blue">${sgn(k.saveB)} from items</span>` : ""}</div><div class="panel-b dnd-list">${saves}</div></section>
+      ${dndProfsPanel(c)}
     </div>
     <section class="panel"><div class="panel-h"><h3>Skills</h3>
         <label class="row dnd-small" style="gap:6px" title="Bards: add half your proficiency bonus to checks you aren't proficient in"><input type="checkbox" data-dnd="jack" ${c.jack ? "checked" : ""} ${dndDis(c)}>Jack of All Trades</label></div>
@@ -136,14 +139,16 @@ function dndMainTab(c, k) {
     </section>
     <div class="dnd-col">
       <div class="dnd-tiles">
-        ${dndTile("Armor Class", dndNum(c, "ac", c.ac, `min="0" max="50" class="dnd-big" aria-label="Armor Class"`))}
+        ${dndTile("Armor Class", c.acAuto ? `<b class="dnd-big" title="${esc(k.acHow)}">${k.ac}</b>` : dndNum(c, "ac", c.ac, `min="0" max="50" class="dnd-big" aria-label="Armor Class"`),
+          `<button class="linkish dnd-tile-sub" data-act="dnd-acmode" ${dndDis(c)} title="${c.acAuto ? "Type your AC in yourself instead" : `Work it out from what you wear (${k.acCalc})`}">${c.acAuto ? esc(k.shield ? `${k.acHow} + shield` : k.acHow) : "Set by hand"}</button>`)}
         ${dndTile("Initiative", `<button class="dnd-big dnd-roll" data-act="dnd-init" title="Roll initiative">${sgn(k.init)}</button>`)}
-        ${dndTile("Speed", `<b class="dnd-big">${k.speed}<small> ft</small></b>`, k.ex ? `<span class="dnd-tile-note">−${k.ex * 5} exhaustion</span>` : "")}
+        ${dndTile("Speed", `<b class="dnd-big">${k.speed}<small> ft</small></b>`, [k.ex ? `<span class="dnd-tile-note">−${k.ex * 5} exhaustion</span>` : "", dndSpeedsText(k) ? `<span class="dnd-tile-sub">${esc(dndSpeedsText(k))}</span>` : ""].join(""))}
         ${dndTile("Proficiency", `<b class="dnd-big">${sgn(k.pb)}</b>`)}
       </div>
       ${dndHpPanel(c, k)}
       ${dndResourcesPanel(c)}
       ${dndConditionsPanel(c, k)}
+      ${dndDefensesPanel(c, k)}
     </div>
   </div>
   ${dndAttacksPanel(c, k)}`;
@@ -171,10 +176,10 @@ function dndHpPanel(c, k) {
         <button class="btn sm danger" data-act="dnd-dmg" ${dndDis(c)}>Damage</button>
         <button class="btn sm" data-act="dnd-heal" ${dndDis(c)}>Heal</button>
       </div>
-      <div class="row dnd-hd">
-        <span><span class="label">Hit dice</span> <b>${c.level - c.hdSpent}</b><span class="faint"> / ${c.level} d${k.hd}</span></span>
-        <button class="btn sm" data-act="dnd-spendhd" ${c.hdSpent >= c.level || !dndCanEdit(c) ? "disabled" : ""} title="Roll a hit die and add your Constitution modifier">Spend a hit die</button>
-      </div>
+      ${k.hdPools.map(h => `<div class="row dnd-hd">
+        <span><span class="label">Hit dice${k.hdPools.length > 1 ? ` · ${esc(h.cls)}` : ""}</span> <b>${h.total - h.spent}</b><span class="faint"> / ${h.total} d${h.hd}</span></span>
+        <button class="btn sm" data-act="dnd-spendhd" data-c="${esc(h.cls)}" ${h.spent >= h.total || !dndCanEdit(c) ? "disabled" : ""} title="Roll a d${h.hd} and add your Constitution modifier">Spend a d${h.hd}</button>
+      </div>`).join("")}
       ${deathRow}
     </div>
   </section>`;
@@ -234,21 +239,27 @@ function dndSpellsTab(c, k) {
     slotRows.push(`<div class="dnd-slot"><span class="label">Pact (${dndOrdinal(k.pact[1])})</span><span class="row" style="gap:5px">${Array.from({ length: k.pact[0] }, (_, i) => dndPip(i < k.pact[0] - used, "dnd-slot", `data-l="pact" data-i="${i}"`, `Pact slot ${i + 1}`)).join("")}</span><span class="faint dnd-small">${k.pact[0] - used} of ${k.pact[0]} · back on a short rest</span></div>`); }
   const groups = DND_SPELL_LEVELS.map((title, l) => {
     const list = c.spells.map((s, i) => [s, i]).filter(([s]) => s.lvl === l); if (!list.length) return "";
-    return `<div class="dnd-spgroup"><h3 class="dnd-sph">${title}</h3>${list.map(([s, i]) => { const ex = dndSpellExtras(c, s, i, k); return `<div class="dnd-spwrap"><div class="dnd-spell">
+    return `<div class="dnd-spgroup"><h3 class="dnd-sph">${title}</h3>${list.map(([s, i]) => { const ex = dndSpellExtras(c, s, i, k); return `<div class="dnd-spwrap"><div class="dnd-spell ${k.casting.length > 1 ? "multi" : ""}">
         ${l ? `<label class="dnd-prep" title="Prepared"><input type="checkbox" data-dnd="spells.${i}.prep" ${s.prep ? "checked" : ""} ${dndDis(c)} aria-label="Prepared"></label>` : `<span class="dnd-prep"></span>`}
         ${dndText(c, `spells.${i}.name`, s.name, `placeholder="Spell name" aria-label="Spell name" class="dnd-spname"`)}
         ${dndText(c, `spells.${i}.notes`, s.notes, `placeholder="Casting time · range · effect" aria-label="Notes"`)}
+        ${k.casting.length > 1 ? `<select class="dnd-spcls" data-dnd="spells.${i}.cls" aria-label="Class" ${dndDis(c)}>${k.casting.map(x => `<option value="${esc(x.cls)}" ${(s.cls || k.casting[0].cls) === x.cls ? "selected" : ""}>${esc(x.cls)}</option>`).join("")}</select>` : ""}
         <span class="row dnd-spbtns">${ex.btns}${l ? `<button class="btn sm" data-act="dnd-cast" data-i="${i}" ${dndDis(c)} title="Spend a spell slot">Cast</button>` : ""}</span>
         ${dndCanEdit(c) ? `<button class="icon-btn" data-act="dnd-del" data-l="spells" data-i="${i}" aria-label="Remove ${esc(s.name || "spell")}">×</button>` : "<span></span>"}
       </div>${ex.body}</div>`; }).join("")}</div>`; }).join("");
-  const tbl = Object.fromEntries(typeof dndTableAt === "function" ? dndTableAt(c, c.level) : []);
-  const cantrips = c.spells.filter(s => s.lvl === 0).length, prepared = c.spells.filter(s => s.lvl && s.prep).length;
+  const ents = dndClassList(c); const multi = k.casting.length > 1;
+  const counts = (e) => { const v = dndAs(c, e); const tb = Object.fromEntries(typeof dndTableAt === "function" ? dndTableAt(v, e.level) : []);
+    const mine = c.spells.filter(s => (s.cls || ents[0].cls) === e.cls || !multi); return { e, tbl: tb, cantrips: mine.filter(s => s.lvl === 0).length, prepared: mine.filter(s => s.lvl && s.prep).length }; };
+  const per = (multi ? ents.filter(e => k.casting.some(x => x.cls === e.cls)) : [ents[0]]).map(counts);
+  const chips = per.map(({ e, tbl, cantrips, prepared }) => `${multi ? `<span class="label">${esc(e.cls)}</span>` : ""}${tbl.Cantrips != null ? `<span class="chip ${cantrips > tbl.Cantrips ? "red" : cantrips === tbl.Cantrips ? "green" : "ink"}">Cantrips ${cantrips} / ${tbl.Cantrips}</span>` : ""}
+          <span class="chip ${tbl["Prepared Spells"] != null && prepared > tbl["Prepared Spells"] ? "red" : tbl["Prepared Spells"] != null && prepared === tbl["Prepared Spells"] ? "green" : "ink"}">Prepared ${prepared}${tbl["Prepared Spells"] != null ? " / " + tbl["Prepared Spells"] : ""}</span>`).join("");
   return `<div class="dnd-spelltop">
       <div class="dnd-tiles">
         ${dndTile("Spellcasting", `<select data-dnd="spellAb" aria-label="Spellcasting ability" ${dndDis(c)}><option value="">${k.spellAb ? DND_AB_NAME[k.spellAb] + " (class)" : "None"}</option>${DND_ABILITIES.map(([a, n]) => `<option value="${a}" ${c.spellAb === a ? "selected" : ""}>${n}</option>`).join("")}</select>`)}
+        ${multi ? k.casting.map(x => dndTile(`${esc(x.cls)} · ${DND_AB_NAME[x.ab].slice(0, 3)}`, `<b class="dnd-big">DC ${x.dc}</b> <button class="dnd-roll" data-act="dnd-spellatk" data-c="${esc(x.cls)}">${sgn(x.atk)}</button>`)).join("") : `
         ${dndTile("Spell save DC", `<b class="dnd-big">${k.spellAb ? k.spellDc : "—"}</b>`)}
-        ${dndTile("Spell attack", k.spellAb ? `<button class="dnd-big dnd-roll" data-act="dnd-spellatk">${sgn(k.spellAtk)}</button>` : `<b class="dnd-big">—</b>`)}
-        ${dndTile("Caster type", `<select data-dnd="caster" aria-label="Caster type" ${dndDis(c)}>${Object.entries(DND_CASTERS).map(([v, l]) => `<option value="${v}" ${c.caster === v ? "selected" : ""}>${v === "auto" ? `From class (${k.cl ? DND_CASTERS[k.cl.caster].split(" (")[0] : "none"})` : l}</option>`).join("")}</select>`)}
+        ${dndTile("Spell attack", k.spellAb ? `<button class="dnd-big dnd-roll" data-act="dnd-spellatk">${sgn(k.spellAtk)}</button>` : `<b class="dnd-big">—</b>`)}`}
+        ${dndTile("Caster type", `<select data-dnd="caster" aria-label="Caster type" ${dndDis(c)}>${Object.entries(DND_CASTERS).map(([v, l]) => `<option value="${v}" ${c.caster === v ? "selected" : ""}>${v === "auto" ? `From class (${k.kind === "multi" ? "multiclass" : DND_CASTERS[k.kind] ? DND_CASTERS[k.kind].split(" (")[0] : "none"})` : l}</option>`).join("")}</select>`)}
       </div>
     </div>
     <div class="dnd-spellgrid">
@@ -256,8 +267,7 @@ function dndSpellsTab(c, k) {
         <div class="panel-b" style="display:grid;gap:10px">${slotRows.join("") || `<p class="faint" style="margin:0">No spell slots at this level. Pick your class on the Details tab, or set a caster type above.</p>`}
         <p class="faint dnd-small" style="margin:0">Lit dots are slots you still have. Click one to spend or restore it, or use Cast on a spell.</p></div></section>
       <section class="panel"><div class="panel-h"><h3>Spells</h3><span class="row" style="gap:6px">
-          ${tbl.Cantrips != null ? `<span class="chip ${cantrips > tbl.Cantrips ? "red" : cantrips === tbl.Cantrips ? "green" : "ink"}">Cantrips ${cantrips} / ${tbl.Cantrips}</span>` : ""}
-          <span class="chip ${tbl["Prepared Spells"] != null && prepared > tbl["Prepared Spells"] ? "red" : tbl["Prepared Spells"] != null && prepared === tbl["Prepared Spells"] ? "green" : "ink"}">Prepared ${prepared}${tbl["Prepared Spells"] != null ? " / " + tbl["Prepared Spells"] : ""}</span>
+          ${chips}
           ${dndCanEdit(c) ? `<button class="btn sm primary" data-act="dnd-pickspells">+ Add from the spell list</button>` : ""}</span></div>
         <div class="panel-b">${groups || `<p class="faint" style="margin:0 0 12px">No spells yet.</p>`}
           ${dndCanEdit(c) ? `<div class="row dnd-addspell">
@@ -271,11 +281,13 @@ function dndSpellsTab(c, k) {
 /* ----- Inventory tab ----- */
 function dndInvTab(c, k) {
   const coins = [["cp", "Copper"], ["sp", "Silver"], ["ep", "Electrum"], ["gp", "Gold"], ["pp", "Platinum"]];
-  const rows = c.inv.map((it, i) => { const ref = dndItemRef(it.name); const open = ref && ui.dndItOpen[c.id + ":" + it.id]; return `<tr>
+  const rows = c.inv.map((it, i) => { const info = { it, ...dndItemInfo(it) }; const ref = info.ref; const open = ui.dndItOpen[c.id + ":" + it.id]; return `<tr class="${it.eq ? "dnd-eq" : ""}">
       <td><div class="row" style="gap:6px;flex-wrap:nowrap">${dndText(c, `inv.${i}.name`, it.name, `placeholder="Item" aria-label="Item name"`)}
-        ${ref ? `<button class="icon-btn dnd-info ${open ? "on" : ""}" data-act="dnd-itinfo" data-id="${esc(it.id)}" aria-label="About ${esc(ref.n)}">i</button>` : ""}
-        ${ref && ref.arm && dndCanEdit(c) ? `<button class="btn sm ghost" data-act="dnd-wear" data-i="${i}" title="Set your Armor Class from this">Wear</button>` : ""}</div>
-        ${open ? `<div class="dnd-itdetail"><span class="faint dnd-small">${esc([ref.cat, ref.rar, ref.att ? "requires attunement" : "", ref.cost, ref.wt ? ref.wt + " lb" : ""].filter(Boolean).join(" · "))}</span><div class="dnd-ftext">${dndParas(ref.t || "")}</div></div>` : ""}</td>
+        <button class="icon-btn dnd-info ${open ? "on" : ""}" data-act="dnd-itinfo" data-id="${esc(it.id)}" aria-label="About ${esc(it.name || "this item")}">i</button>
+        ${dndItemBtns(c, it, i, info)}</div>
+        ${info.it.ch ? `<div class="row dnd-charges"><span class="label">Charges</span>${info.it.ch <= 12 ? Array.from({ length: info.it.ch }, (_, j) => dndPip(j < info.it.ch - info.it.chUsed, "dnd-charge", `data-i="${i}" data-j="${j}"`, `Charge ${j + 1}`)).join("") : `<b>${info.it.ch - info.it.chUsed}</b><span class="faint"> / ${info.it.ch}</span><button class="icon-btn" data-act="dnd-charge" data-i="${i}" data-j="0" ${dndDis(c)} aria-label="Use a charge">−</button>`}<span class="faint dnd-small">${{ dawn: "back at dawn", long: "back on a long rest", short: "back on a short rest", "": "" }[info.it.chRest]}</span></div>` : ""}
+        ${dndItemFxText(info) ? `<div class="faint dnd-small">${esc(dndItemFxText(info))}${info.active ? "" : info.needsAtt && it.eq ? " · attune to use" : " · equip to use"}</div>` : ""}
+        ${open ? dndItemDetail(c, it, i, info) : ""}</td>
       <td class="dnd-n">${dndNum(c, `inv.${i}.qty`, it.qty, `min="0" aria-label="Quantity"`)}</td>
       <td class="dnd-n"><input type="number" step="0.1" min="0" data-dnd="inv.${i}.wt" value="${it.wt || ""}" placeholder="0" aria-label="Weight each" ${dndDis(c)}></td>
       <td>${dndText(c, `inv.${i}.notes`, it.notes, `placeholder="Notes" aria-label="Notes"`)}</td>
@@ -284,7 +296,7 @@ function dndInvTab(c, k) {
   return `<section class="panel" style="margin-bottom:16px"><div class="panel-h"><h3>Coins</h3><span class="faint dnd-small">${(c.coins.cp / 100 + c.coins.sp / 10 + c.coins.ep / 2 + c.coins.gp + c.coins.pp * 10).toFixed(2).replace(/\.00$/, "")} gp in all</span></div>
       <div class="panel-b dnd-coins">${coins.map(([kk, l]) => `<div class="field"><label class="label">${l} (${kk.toUpperCase()})</label>${dndNum(c, `coins.${kk}`, c.coins[kk] || "", `min="0" placeholder="0"`)}</div>`).join("")}</div></section>
     <section class="panel"><div class="panel-h"><h3>Equipment</h3>
-        <span class="row dnd-small" style="gap:10px"><span class="${over ? "chip red" : "faint"}">${k.weight} / ${k.carry} lb carried</span>${dndCanEdit(c) ? `<button class="btn sm primary" data-act="dnd-pickitems">+ Add from the equipment list</button><button class="btn sm" data-act="dnd-additem">+ Write one in</button>` : ""}</span></div>
+        <span class="row dnd-small" style="gap:10px"><span class="chip ${k.attuned > 3 ? "red" : "ink"}" title="Items you're attuned to (3 at most)">Attuned ${k.attuned} / 3</span><span class="${over ? "chip red" : "faint"}">${k.weight} / ${k.carry} lb carried</span>${dndCanEdit(c) ? `<button class="btn sm primary" data-act="dnd-pickitems">+ Add from the equipment list</button><button class="btn sm" data-act="dnd-additem">+ Write one in</button>` : ""}</span></div>
       <div class="tbl-wrap"><table class="dnd-inv"><thead><tr><th>Item</th><th>Qty</th><th>Weight (lb)</th><th>Notes</th><th></th></tr></thead>
         <tbody>${rows || `<tr><td colspan="5" class="faint">Nothing carried yet.</td></tr>`}</tbody></table></div>
       ${over ? `<p class="dnd-small" style="margin:0;padding:0 16px 14px;color:var(--bad)">Over your carrying capacity (Strength × 15). Your speed drops to 5 ft.</p>` : ""}
@@ -301,7 +313,9 @@ function dndDetailsTab(c, k) {
       <div class="field dnd-wide"><label class="label">Name</label>${dndText(c, "name", c.name, `placeholder="Character name"`)}</div>
       <div class="field"><label class="label">Class</label><select data-dnd="cls" ${dndDis(c)}><option value="">Choose a class…</option>${Object.keys(DND_CLASSES).map(n => `<option ${c.cls === n ? "selected" : ""}>${n}</option>`).join("")}</select></div>
       <div class="field"><label class="label">Subclass</label>${dndText(c, "subclass", c.subclass, `placeholder="From level 3"`)}</div>
-      <div class="field"><label class="label">Level</label>${dndNum(c, "level", c.level, `min="1" max="20"`)}</div>
+      ${dndIsMulti(c) ? `<div class="field"><label class="label">${esc(c.cls || "Class")} level</label><input type="number" min="1" max="${20 - (c.level - dndClassList(c)[0].level)}" value="${dndClassList(c)[0].level}" data-act-change="dnd-lvl1" ${dndDis(c)}>
+        <span class="faint dnd-small">Character level ${c.level}.</span></div>` : `<div class="field"><label class="label">Level</label>${dndNum(c, "level", c.level, `min="1" max="20"`)}</div>`}
+      ${dndMultiRows(c)}
       <div class="field"><label class="label">Experience points</label>${dndNum(c, "xp", c.xp || "", `min="0" placeholder="0"`)}
         <span class="faint dnd-small">${next == null ? "Highest level." : c.xp >= next ? `<b style="color:var(--ok)">Enough for level ${c.level + 1}!</b>` : `Level ${c.level + 1} at ${next.toLocaleString()} XP.`}</span></div>
       <div class="field"><label class="label">Species</label>${dndText(c, "species", c.species, `list="dnd-species" placeholder="Human"`)}</div>
@@ -324,12 +338,12 @@ function dndDetailsTab(c, k) {
       <div class="field"><label class="label">Token & card colour</label><div class="swatches">${swatches.map(s => `<button class="swatch ${c.color === s ? "on" : ""}" data-act="dnd-color" data-v="${s}" style="background:${s || (k.cl ? k.cl.color : "#556070")}" aria-label="${s ? "Colour " + s : "Class colour"}" ${dndDis(c)}></button>`).join("")}</div></div>
       <p class="faint dnd-small dnd-wide" style="margin:0">Ability scores go on the Sheet tab as the final numbers, with your background's increases already added.</p>
     </div></section>
-    <section class="panel dnd-span"><div class="panel-h"><h3>Proficiencies, features & story</h3></div><div class="panel-b dnd-form dnd-areas">
+    ${dndDefensesEdit(c, k)}
+    <section class="panel dnd-span"><div class="panel-h"><h3>Proficiencies & features</h3></div><div class="panel-b dnd-form dnd-areas">
       ${area("profs", "Proficiencies & languages", "Armor: light, medium\nWeapons: simple, martial\nTools: smith's tools\nLanguages: Common, Dwarvish")}
       ${area("features", "Features & traits", "Class features, species traits, feats, weapon masteries…")}
-      ${area("appearance", "Appearance & personality", "What people notice, how they act")}
-      ${area("notes", "Backstory & notes", "Where they come from, allies, quest notes")}
     </div></section>
+    ${dndStoryEdit(c, k)}
   </div>`;
 }
 
@@ -341,11 +355,11 @@ Object.assign(A, {
   "dnd-tab": el => { ui.dndTab = el.dataset.t; ui.dndEdit = null; render(); },
   "dnd-adv": el => { ui.dndAdv = el.dataset.m; render(); },
   "dnd-insp": dndAct(c => { c.insp = !c.insp; }),
-  "dnd-check": dndAct((c, el, ev) => { const a = el.dataset.a; dndD20(c, `${DND_AB_NAME[a]} check`, dndCalc(c).mod[a] + (c.jack ? Math.floor(dndCalc(c).pb / 2) : 0), ev); return false; }, false),
+  "dnd-check": dndAct((c, el, ev) => { const a = el.dataset.a; const k = dndCalc(c); dndD20(c, `${DND_AB_NAME[a]} check`, k.mod[a] + (c.jack ? Math.floor(k.pb / 2) : 0) + k.checkB, ev); return false; }, false),
   "dnd-save": dndAct((c, el, ev) => { const a = el.dataset.a; dndD20(c, `${DND_AB_NAME[a]} save`, dndCalc(c).save[a], ev); return false; }, false),
   "dnd-skill": dndAct((c, el, ev) => { const s = DND_SKILLS.find(x => x[0] === el.dataset.s); dndD20(c, s[1], dndCalc(c).skill[s[0]], ev); return false; }, false),
   "dnd-init": dndAct((c, el, ev) => { dndD20(c, "Initiative", dndCalc(c).init, ev); return false; }, false),
-  "dnd-spellatk": dndAct((c, el, ev) => { dndD20(c, "Spell attack", dndCalc(c).spellAtk, ev); return false; }, false),
+  "dnd-spellatk": dndAct((c, el, ev) => { const k = dndCalc(c); const x = k.casting.find(y => y.cls === el.dataset.c); dndD20(c, x ? `${x.cls} spell attack` : "Spell attack", x ? x.atk : k.spellAtk, ev); return false; }, false),
   "dnd-saveprof": dndAct((c, el) => { c.saveProf[el.dataset.a] = !c.saveProf[el.dataset.a]; }),
   "dnd-skillprof": dndAct((c, el) => { const s = el.dataset.s; const v = ((c.skills[s] || 0) + 1) % 3; if (v) c.skills[s] = v; else delete c.skills[s]; }),
   "dnd-attack": dndAct((c, el, ev) => {
@@ -374,9 +388,12 @@ Object.assign(A, {
   "dnd-color": dndAct((c, el) => { c.color = el.dataset.v || ""; }),
   "dnd-dmg": dndAct(c => { const n = Math.max(0, Math.floor(Number(ui.dndAmt) || 0)); if (!n) return false; dndDamage(c, n); ui.dndAmt = ""; }),
   "dnd-heal": dndAct(c => { const n = Math.max(0, Math.floor(Number(ui.dndAmt) || 0)); if (!n) return false; dndHeal(c, n); ui.dndAmt = ""; showNotice(`${dndName(c)} regains ${n} hit points.`); }),
-  "dnd-spendhd": dndAct(c => {
-    const k = dndCalc(c); if (c.hdSpent >= c.level) return false; const r = d(k.hd); const n = Math.max(1, r + k.mod.con);
-    c.hdSpent++; dndHeal(c, n); Dice.raw("Hit die", `d${k.hd} (${r}) ${sgn(k.mod.con)}`, n, dndName(c), [{ t: `+${n} HP`, c: "green" }]); }),
+  "dnd-spendhd": dndAct((c, el) => {
+    const k = dndCalc(c); const h = k.hdPools.find(x => x.cls === el.dataset.c) || k.hdPools.find(x => x.spent < x.total); if (!h || h.spent >= h.total) return false;
+    const r = d(h.hd); const n = Math.max(1, r + k.mod.con);
+    if (dndIsMulti(c)) { c.hdBy[h.cls] = (c.hdBy[h.cls] || 0) + 1; c.hdSpent = Object.values(c.hdBy).reduce((a, x) => a + x, 0); } else c.hdSpent++;
+    dndHeal(c, n); Dice.raw("Hit die", `d${h.hd} (${r}) ${sgn(k.mod.con)}`, n, dndName(c), [{ t: `+${n} HP`, c: "green" }]); }),
+  "dnd-acmode": dndAct(c => { const k = dndCalc(c); if (c.acAuto) { c.ac = k.ac; c.acAuto = false; } else { c.acAuto = true; showNotice(`Armor Class worked out from what you wear: ${dndCalc(c).ac} (${dndCalc(c).acHow}).`); } }),
   "dnd-death": dndAct((c, el) => { const key = el.dataset.k; const i = Number(el.dataset.i); c.death[key] = c.death[key] > i ? i : i + 1; }),
   "dnd-deathroll": dndAct((c, el, ev) => {
     const r = dndD20(c, "Death save", 0, ev); const tags = [];
@@ -384,11 +401,11 @@ Object.assign(A, {
     if (r.nat === 1) c.death.f = Math.min(3, c.death.f + 2); else if (r.total >= 10) c.death.s = Math.min(3, c.death.s + 1); else c.death.f = Math.min(3, c.death.f + 1);
     if (c.death.f >= 3) showNotice(`${dndName(c)} has failed three death saves and dies.`);
     else if (c.death.s >= 3) { c.death = { s: 0, f: 0 }; showNotice(`${dndName(c)} is stable: still at 0 HP and unconscious, but no longer dying.`); } }),
-  "dnd-short": dndAct(c => { c.pactUsed = 0; dndRestResources(c, "short");
+  "dnd-short": dndAct(c => { c.pactUsed = 0; dndRestResources(c, "short"); dndRestOther(c, "short");
     const back = dndResources(c).filter(r => r.rest !== "long").map(r => r.n);
     showNotice(`Short rest: spend hit dice to heal.${dndCalc(c).pact[0] ? " Pact slots are back." : ""}${back.length ? ` ${back.join(", ")} recharged.` : ""}`); }),
   "dnd-long": dndAct(c => {
-    c.hp = null; c.hpTemp = 0; c.hdSpent = 0; c.slotsUsed = c.slotsUsed.map(() => 0); c.pactUsed = 0; dndRestResources(c, "long"); if (c.species === "Human") c.insp = true;  c.death = { s: 0, f: 0 };
+    c.hp = null; c.hpTemp = 0; c.hdSpent = 0; c.hdBy = {}; dndRestOther(c, "long"); c.slotsUsed = c.slotsUsed.map(() => 0); c.pactUsed = 0; dndRestResources(c, "long"); if (c.species === "Human") c.insp = true;  c.death = { s: 0, f: 0 };
     c.exhaustion = Math.max(0, c.exhaustion - 1); c.conditions = c.conditions.filter(x => x !== "Unconscious");
     showNotice(`Long rest: ${dndName(c)} is back to full hit points, with every hit die and spell slot restored${c.exhaustion ? " and one level of exhaustion gone" : ""}.`); }),
 });
@@ -425,6 +442,7 @@ function dndInput(ev) {
   if (path === "cls" && DND_CLASSES[v]) { DND_ABILITIES.forEach(([a]) => { c.saveProf[a] = DND_CLASSES[v].saves.includes(a); });
     showNotice(`${v}: saving throw proficiencies set to ${DND_CLASSES[v].saves.map(a => DND_AB_NAME[a]).join(" and ")}.`); }
   if (path === "level") c.hdSpent = Math.min(c.hdSpent, c.level);
+  if (/^inv\.\d+\.(eq|att)$/.test(path)) dndCheckAttune(c, el);
   dndCommit(c, el.type === "checkbox" || el.tagName === "SELECT");
 }
 document.addEventListener("input", ev => { if (ev.target.type !== "checkbox") dndInput(ev); });
@@ -436,7 +454,7 @@ document.addEventListener("keydown", ev => { if (ev.key === "Enter" && ev.target
 function dndTablePanel(c) {
   const k = dndCalc(c);
   return `<div class="dnd dnd-mini" data-cid="${esc(c.id)}" style="display:grid;gap:10px">
-    <div class="row" style="justify-content:space-between"><b>${esc(dndName(c))}</b><span class="faint dnd-small">AC ${c.ac} · ${k.speed} ft · PP ${k.passive.perception}</span></div>
+    <div class="row" style="justify-content:space-between"><b>${esc(dndName(c))}</b><span class="faint dnd-small">AC ${k.ac} · ${k.speed} ft · PP ${k.passive.perception}</span></div>
     <div class="row"><b class="dnd-minihp">${k.hp}<span class="faint"> / ${k.hpMax}</span></b>${c.hpTemp ? `<span class="chip blue">+${c.hpTemp} temp</span>` : ""}${k.hp === 0 ? `<span class="chip red">${k.dead ? "Dead" : "Dying"}</span>` : ""}
       ${c.conditions.map(x => `<span class="chip red">${x}</span>`).join("")}${c.exhaustion ? `<span class="chip amber">Exhaustion ${c.exhaustion}</span>` : ""}</div>
     <div class="row dnd-dmg">

@@ -1,0 +1,989 @@
+{
+ "id": 90000001,
+ "success": true,
+ "message": "Character successfully received.",
+ "data": {
+  "id": 90000001,
+  "name": "Vessa Thornwood",
+  "username": "example-player",
+  "gender": "Female",
+  "age": 31,
+  "height": "5'7\"",
+  "weight": 140,
+  "eyes": "Grey",
+  "hair": "Black",
+  "skin": "Olive",
+  "faith": "Mystra",
+  "inspiration": true,
+  "currentXp": 6600,
+  "alignmentId": 2,
+  "decorations": {
+   "avatarUrl": null
+  },
+  "stats": [
+   {
+    "id": 1,
+    "name": null,
+    "value": 15
+   },
+   {
+    "id": 2,
+    "name": null,
+    "value": 13
+   },
+   {
+    "id": 3,
+    "name": null,
+    "value": 14
+   },
+   {
+    "id": 4,
+    "name": null,
+    "value": 12
+   },
+   {
+    "id": 5,
+    "name": null,
+    "value": 10
+   },
+   {
+    "id": 6,
+    "name": null,
+    "value": 8
+   }
+  ],
+  "bonusStats": [
+   {
+    "id": 1,
+    "name": null,
+    "value": null
+   },
+   {
+    "id": 2,
+    "name": null,
+    "value": null
+   },
+   {
+    "id": 3,
+    "name": null,
+    "value": null
+   },
+   {
+    "id": 4,
+    "name": null,
+    "value": null
+   },
+   {
+    "id": 5,
+    "name": null,
+    "value": null
+   },
+   {
+    "id": 6,
+    "name": null,
+    "value": null
+   }
+  ],
+  "overrideStats": [
+   {
+    "id": 1,
+    "name": null,
+    "value": null
+   },
+   {
+    "id": 2,
+    "name": null,
+    "value": null
+   },
+   {
+    "id": 3,
+    "name": null,
+    "value": null
+   },
+   {
+    "id": 4,
+    "name": null,
+    "value": null
+   },
+   {
+    "id": 5,
+    "name": null,
+    "value": null
+   },
+   {
+    "id": 6,
+    "name": null,
+    "value": null
+   }
+  ],
+  "baseHitPoints": 24,
+  "bonusHitPoints": null,
+  "overrideHitPoints": null,
+  "removedHitPoints": 9,
+  "temporaryHitPoints": 4,
+  "race": {
+   "fullName": "Dwarf",
+   "baseRaceName": "Dwarf",
+   "isLegacy": false,
+   "sizeId": 4,
+   "weightSpeeds": {
+    "normal": {
+     "walk": 30,
+     "fly": 0,
+     "swim": 0,
+     "climb": 0,
+     "burrow": 0
+    }
+   },
+   "racialTraits": [
+    {
+     "definition": {
+      "name": "Darkvision"
+     }
+    },
+    {
+     "definition": {
+      "name": "Dwarven Resilience"
+     }
+    },
+    {
+     "definition": {
+      "name": "Dwarven Toughness"
+     }
+    },
+    {
+     "definition": {
+      "name": "Stonecunning"
+     }
+    }
+   ],
+   "sources": [
+    {
+     "sourceId": 145
+    }
+   ]
+  },
+  "background": {
+   "definition": {
+    "name": "Soldier"
+   }
+  },
+  "classes": [
+   {
+    "id": 501,
+    "level": 3,
+    "isStartingClass": true,
+    "hitDiceUsed": 1,
+    "definition": {
+     "name": "Fighter",
+     "sources": [
+      {
+       "sourceId": 145
+      }
+     ],
+     "classFeatures": [
+      {
+       "name": "Second Wind"
+      },
+      {
+       "name": "Action Surge"
+      }
+     ]
+    },
+    "subclassDefinition": {
+     "name": "Champion",
+     "classFeatures": [
+      {
+       "name": "Improved Critical",
+       "requiredLevel": 3
+      }
+     ]
+    },
+    "classFeatures": []
+   },
+   {
+    "id": 502,
+    "level": 2,
+    "isStartingClass": false,
+    "hitDiceUsed": 0,
+    "definition": {
+     "name": "Wizard",
+     "sources": [
+      {
+       "sourceId": 145
+      }
+     ],
+     "classFeatures": [
+      {
+       "name": "Spellcasting"
+      }
+     ]
+    },
+    "subclassDefinition": null,
+    "classFeatures": []
+   }
+  ],
+  "modifiers": {
+   "race": [
+    {
+     "type": "resistance",
+     "subType": "poison",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    },
+    {
+     "type": "sense",
+     "subType": "darkvision",
+     "value": 120,
+     "fixedValue": 120,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    },
+    {
+     "type": "bonus",
+     "subType": "hit-points-per-level",
+     "value": 1,
+     "fixedValue": 1,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    },
+    {
+     "type": "language",
+     "subType": "common",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": "Common",
+     "componentId": 1
+    },
+    {
+     "type": "language",
+     "subType": "dwarvish",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": "Dwarvish",
+     "componentId": 1
+    }
+   ],
+   "background": [
+    {
+     "type": "bonus",
+     "subType": "strength-score",
+     "value": 2,
+     "fixedValue": 2,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    },
+    {
+     "type": "bonus",
+     "subType": "constitution-score",
+     "value": 1,
+     "fixedValue": 1,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    },
+    {
+     "type": "proficiency",
+     "subType": "athletics",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    },
+    {
+     "type": "proficiency",
+     "subType": "intimidation",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    },
+    {
+     "type": "proficiency",
+     "subType": "gaming-set-dice",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": "Dice Set",
+     "componentId": 1
+    }
+   ],
+   "class": [
+    {
+     "type": "proficiency",
+     "subType": "strength-saving-throws",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    },
+    {
+     "type": "proficiency",
+     "subType": "constitution-saving-throws",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    },
+    {
+     "type": "proficiency",
+     "subType": "intelligence-saving-throws",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    },
+    {
+     "type": "proficiency",
+     "subType": "wisdom-saving-throws",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    },
+    {
+     "type": "proficiency",
+     "subType": "perception",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    },
+    {
+     "type": "proficiency",
+     "subType": "light-armor",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": "Light Armor",
+     "componentId": 1
+    },
+    {
+     "type": "proficiency",
+     "subType": "medium-armor",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": "Medium Armor",
+     "componentId": 1
+    },
+    {
+     "type": "proficiency",
+     "subType": "heavy-armor",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": "Heavy Armor",
+     "componentId": 1
+    },
+    {
+     "type": "proficiency",
+     "subType": "shields",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": "Shields",
+     "componentId": 1
+    },
+    {
+     "type": "proficiency",
+     "subType": "simple-weapons",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": "Simple Weapons",
+     "componentId": 1
+    },
+    {
+     "type": "proficiency",
+     "subType": "martial-weapons",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": "Martial Weapons",
+     "componentId": 1
+    },
+    {
+     "type": "weapon-mastery",
+     "subType": "sap-longsword",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    },
+    {
+     "type": "expertise",
+     "subType": "perception",
+     "value": null,
+     "fixedValue": null,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    }
+   ],
+   "feat": [
+    {
+     "type": "bonus",
+     "subType": "initiative",
+     "value": 3,
+     "fixedValue": 3,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    }
+   ],
+   "item": [
+    {
+     "type": "bonus",
+     "subType": "armor-class",
+     "value": 1,
+     "fixedValue": 1,
+     "friendlySubtypeName": null,
+     "componentId": 1
+    }
+   ],
+   "condition": []
+  },
+  "feats": [
+   {
+    "definition": {
+     "name": "Alert"
+    }
+   }
+  ],
+  "options": {
+   "class": [
+    {
+     "definition": {
+      "name": "Defense"
+     }
+    }
+   ],
+   "race": [],
+   "feat": []
+  },
+  "inventory": [
+   {
+    "id": 1,
+    "quantity": 1,
+    "equipped": true,
+    "isAttuned": false,
+    "limitedUse": null,
+    "containerEntityId": 90000001,
+    "definition": {
+     "name": "Chain Mail",
+     "filterType": "Armor",
+     "type": null,
+     "baseArmorName": null,
+     "armorClass": 16,
+     "armorTypeId": 3,
+     "weight": 55,
+     "bundleSize": 1,
+     "magic": false,
+     "canAttune": false,
+     "rarity": "Common",
+     "damage": null,
+     "damageType": null,
+     "attackType": null,
+     "categoryId": null,
+     "properties": [],
+     "grantedModifiers": [],
+     "range": null,
+     "longRange": null
+    }
+   },
+   {
+    "id": 2,
+    "quantity": 1,
+    "equipped": true,
+    "isAttuned": false,
+    "limitedUse": null,
+    "containerEntityId": 90000001,
+    "definition": {
+     "name": "Shield",
+     "filterType": "Armor",
+     "type": null,
+     "baseArmorName": null,
+     "armorClass": 2,
+     "armorTypeId": 4,
+     "weight": 6,
+     "bundleSize": 1,
+     "magic": false,
+     "canAttune": false,
+     "rarity": "Common",
+     "damage": null,
+     "damageType": null,
+     "attackType": null,
+     "categoryId": null,
+     "properties": [],
+     "grantedModifiers": [],
+     "range": null,
+     "longRange": null
+    }
+   },
+   {
+    "id": 3,
+    "quantity": 1,
+    "equipped": true,
+    "isAttuned": false,
+    "limitedUse": null,
+    "containerEntityId": 90000001,
+    "definition": {
+     "name": "Longsword, +1",
+     "filterType": "Weapon",
+     "type": "Longsword",
+     "baseArmorName": null,
+     "armorClass": null,
+     "armorTypeId": null,
+     "weight": 3,
+     "bundleSize": 1,
+     "magic": true,
+     "canAttune": false,
+     "rarity": "Uncommon",
+     "damage": {
+      "diceString": "1d8"
+     },
+     "damageType": "Slashing",
+     "attackType": 1,
+     "categoryId": 2,
+     "properties": [
+      {
+       "name": "Versatile"
+      },
+      {
+       "name": "Sap"
+      }
+     ],
+     "grantedModifiers": [
+      {
+       "type": "bonus",
+       "subType": "magic",
+       "value": 1
+      }
+     ],
+     "range": null,
+     "longRange": null
+    }
+   },
+   {
+    "id": 4,
+    "quantity": 1,
+    "equipped": false,
+    "isAttuned": false,
+    "limitedUse": null,
+    "containerEntityId": 90000001,
+    "definition": {
+     "name": "Light Crossbow",
+     "filterType": "Weapon",
+     "type": "Light Crossbow",
+     "baseArmorName": null,
+     "armorClass": null,
+     "armorTypeId": null,
+     "weight": 5,
+     "bundleSize": 1,
+     "magic": false,
+     "canAttune": false,
+     "rarity": "Common",
+     "damage": {
+      "diceString": "1d8"
+     },
+     "damageType": "Piercing",
+     "attackType": 2,
+     "categoryId": 1,
+     "properties": [
+      {
+       "name": "Ammunition"
+      },
+      {
+       "name": "Loading"
+      },
+      {
+       "name": "Two-Handed"
+      }
+     ],
+     "grantedModifiers": [],
+     "range": 80,
+     "longRange": 320
+    }
+   },
+   {
+    "id": 5,
+    "quantity": 1,
+    "equipped": true,
+    "isAttuned": true,
+    "limitedUse": null,
+    "containerEntityId": 90000001,
+    "definition": {
+     "name": "Cloak of Protection",
+     "filterType": "Wondrous item",
+     "type": null,
+     "baseArmorName": null,
+     "armorClass": null,
+     "armorTypeId": null,
+     "weight": 1,
+     "bundleSize": 1,
+     "magic": true,
+     "canAttune": true,
+     "rarity": "Uncommon",
+     "damage": null,
+     "damageType": null,
+     "attackType": null,
+     "categoryId": null,
+     "properties": [],
+     "grantedModifiers": [
+      {
+       "type": "bonus",
+       "subType": "armor-class",
+       "value": 1
+      },
+      {
+       "type": "bonus",
+       "subType": "saving-throws",
+       "value": 1
+      }
+     ],
+     "range": null,
+     "longRange": null
+    }
+   },
+   {
+    "id": 6,
+    "quantity": 1,
+    "equipped": false,
+    "isAttuned": false,
+    "limitedUse": {
+     "maxUses": 7,
+     "numberUsed": 2,
+     "resetType": 3,
+     "useProficiencyBonus": false,
+     "statModifierUsesId": null
+    },
+    "containerEntityId": 90000001,
+    "definition": {
+     "name": "Wand of Magic Missiles",
+     "filterType": "Wand",
+     "type": null,
+     "baseArmorName": null,
+     "armorClass": null,
+     "armorTypeId": null,
+     "weight": 1,
+     "bundleSize": 1,
+     "magic": true,
+     "canAttune": false,
+     "rarity": "Uncommon",
+     "damage": null,
+     "damageType": null,
+     "attackType": null,
+     "categoryId": null,
+     "properties": [],
+     "grantedModifiers": [],
+     "range": null,
+     "longRange": null
+    }
+   },
+   {
+    "id": 7,
+    "quantity": 1,
+    "equipped": true,
+    "isAttuned": true,
+    "limitedUse": null,
+    "containerEntityId": 90000001,
+    "definition": {
+     "name": "Lucky Coin of Vessa",
+     "filterType": "Wondrous item",
+     "type": null,
+     "baseArmorName": null,
+     "armorClass": null,
+     "armorTypeId": null,
+     "weight": 0,
+     "bundleSize": 1,
+     "magic": true,
+     "canAttune": true,
+     "rarity": "Rare",
+     "damage": null,
+     "damageType": null,
+     "attackType": null,
+     "categoryId": null,
+     "properties": [],
+     "grantedModifiers": [
+      {
+       "type": "bonus",
+       "subType": "saving-throws",
+       "value": 1
+      }
+     ],
+     "range": null,
+     "longRange": null
+    }
+   },
+   {
+    "id": 8,
+    "quantity": 20,
+    "equipped": false,
+    "isAttuned": false,
+    "limitedUse": null,
+    "containerEntityId": 90000001,
+    "definition": {
+     "name": "Bolts",
+     "filterType": "Ammunition",
+     "type": "Ammunition",
+     "baseArmorName": null,
+     "armorClass": null,
+     "armorTypeId": null,
+     "weight": 1.5,
+     "bundleSize": 20,
+     "magic": false,
+     "canAttune": false,
+     "rarity": "Common",
+     "damage": null,
+     "damageType": null,
+     "attackType": null,
+     "categoryId": null,
+     "properties": [],
+     "grantedModifiers": [],
+     "range": null,
+     "longRange": null
+    }
+   },
+   {
+    "id": 9,
+    "quantity": 1,
+    "equipped": false,
+    "isAttuned": false,
+    "limitedUse": null,
+    "containerEntityId": 90000001,
+    "definition": {
+     "name": "Backpack",
+     "filterType": "Other Gear",
+     "type": null,
+     "baseArmorName": null,
+     "armorClass": null,
+     "armorTypeId": null,
+     "weight": 5,
+     "bundleSize": 1,
+     "magic": false,
+     "canAttune": false,
+     "rarity": "Common",
+     "damage": null,
+     "damageType": null,
+     "attackType": null,
+     "categoryId": null,
+     "properties": [],
+     "grantedModifiers": [],
+     "range": null,
+     "longRange": null
+    }
+   }
+  ],
+  "customItems": [
+   {
+    "name": "Letter from Captain Ruhl",
+    "quantity": 1,
+    "weight": 0,
+    "notes": "Sealed"
+   }
+  ],
+  "currencies": {
+   "cp": 12,
+   "sp": 30,
+   "ep": 0,
+   "gp": 47,
+   "pp": 1
+  },
+  "classSpells": [
+   {
+    "characterClassId": 502,
+    "spells": [
+     {
+      "prepared": true,
+      "alwaysPrepared": false,
+      "definition": {
+       "name": "Fire Bolt",
+       "level": 0
+      }
+     },
+     {
+      "prepared": true,
+      "alwaysPrepared": false,
+      "definition": {
+       "name": "Mage Hand",
+       "level": 0
+      }
+     },
+     {
+      "prepared": true,
+      "alwaysPrepared": false,
+      "definition": {
+       "name": "Shield",
+       "level": 1
+      }
+     },
+     {
+      "prepared": true,
+      "alwaysPrepared": false,
+      "definition": {
+       "name": "Magic Missile",
+       "level": 1
+      }
+     },
+     {
+      "prepared": false,
+      "alwaysPrepared": false,
+      "definition": {
+       "name": "Sleep",
+       "level": 1
+      }
+     }
+    ]
+   }
+  ],
+  "spells": {
+   "race": [],
+   "class": [],
+   "feat": [],
+   "item": [],
+   "background": []
+  },
+  "spellSlots": [
+   {
+    "level": 1,
+    "used": 1,
+    "available": 0
+   },
+   {
+    "level": 2,
+    "used": 0,
+    "available": 0
+   },
+   {
+    "level": 3,
+    "used": 0,
+    "available": 0
+   },
+   {
+    "level": 4,
+    "used": 0,
+    "available": 0
+   },
+   {
+    "level": 5,
+    "used": 0,
+    "available": 0
+   },
+   {
+    "level": 6,
+    "used": 0,
+    "available": 0
+   },
+   {
+    "level": 7,
+    "used": 0,
+    "available": 0
+   },
+   {
+    "level": 8,
+    "used": 0,
+    "available": 0
+   },
+   {
+    "level": 9,
+    "used": 0,
+    "available": 0
+   }
+  ],
+  "pactMagic": [],
+  "actions": {
+   "class": [
+    {
+     "name": "Second Wind",
+     "limitedUse": {
+      "maxUses": 2,
+      "numberUsed": 1,
+      "resetType": 1,
+      "useProficiencyBonus": false,
+      "statModifierUsesId": null
+     }
+    },
+    {
+     "name": "Action Surge",
+     "limitedUse": {
+      "maxUses": 1,
+      "numberUsed": 1,
+      "resetType": 1,
+      "useProficiencyBonus": false,
+      "statModifierUsesId": null
+     }
+    },
+    {
+     "name": "Arcane Recovery",
+     "limitedUse": {
+      "maxUses": 1,
+      "numberUsed": 0,
+      "resetType": 2,
+      "useProficiencyBonus": false,
+      "statModifierUsesId": null
+     }
+    }
+   ],
+   "race": [
+    {
+     "name": "Stonecunning",
+     "limitedUse": {
+      "maxUses": 0,
+      "numberUsed": 1,
+      "resetType": 2,
+      "useProficiencyBonus": true,
+      "statModifierUsesId": null
+     }
+    }
+   ],
+   "feat": [
+    {
+     "name": "Rallying Cry",
+     "limitedUse": {
+      "maxUses": 0,
+      "numberUsed": 0,
+      "resetType": 2,
+      "useProficiencyBonus": false,
+      "statModifierUsesId": 2
+     }
+    }
+   ]
+  },
+  "customActions": [
+   {
+    "name": "Shield Bash",
+    "activation": {
+     "activationType": 3
+    },
+    "snippet": "Shove with the shield."
+   }
+  ],
+  "conditions": [
+   {
+    "id": 4,
+    "level": 1
+   },
+   {
+    "id": 11,
+    "level": null
+   }
+  ],
+  "deathSaves": {
+   "failCount": null,
+   "successCount": null
+  },
+  "traits": {
+   "personalityTraits": "Counts everything twice.",
+   "ideals": "Duty.",
+   "bonds": "The 3rd Company.",
+   "flaws": "Can't refuse a wager.",
+   "appearance": "A scar across her chin."
+  },
+  "notes": {
+   "backstory": "Served ten years on the northern wall.",
+   "allies": "Captain Ruhl",
+   "organizations": "The 3rd Company",
+   "enemies": null,
+   "personalPossessions": "A dented helm",
+   "otherHoldings": null,
+   "otherNotes": null
+  },
+  "customSenses": [],
+  "customSpeeds": [],
+  "customDefenseAdjustments": [],
+  "characterValues": []
+ }
+}

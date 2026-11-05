@@ -13,8 +13,8 @@ function dndPartyTable(list) {
     return `<tr>
       <td><div class="row" style="gap:10px;flex-wrap:nowrap"><div class="portrait sm" style="background:${esc(dndColor(c))}">${esc(dndName(c).charAt(0).toUpperCase())}</div>
         <div style="min-width:0"><b>${esc(dndName(c))}</b>${online ? ` <span class="chip green">Online</span>` : ""}<div class="faint dnd-small">${esc(st.players[c.id] || c.player || "")}</div></div></div></td>
-      <td>${esc([c.species, c.cls].filter(Boolean).join(" ") || "—")}<div class="faint dnd-small">Level ${c.level}${c.subclass ? " · " + esc(c.subclass) : ""}</div></td>
-      <td class="dnd-n"><b>${c.ac}</b></td>
+      <td>${esc([c.species, dndClassLine(c)].filter(Boolean).join(" ") || "—")}<div class="faint dnd-small">Level ${c.level}${c.subclass ? " · " + esc(c.subclass) : ""}</div></td>
+      <td class="dnd-n"><b>${dndCalc(c).ac}</b></td>
       <td class="dnd-hpcell"><b>${k.hp}</b><span class="faint"> / ${k.hpMax}</span>${c.hpTemp ? ` <span class="chip blue">+${c.hpTemp}</span>` : ""}
         <div class="meter"><i style="width:${clamp(frac, 0, 1) * 100}%;background:${dndRingColor(frac)}"></i></div></td>
       <td class="dnd-n">${k.passive.perception}</td>
@@ -41,7 +41,7 @@ function dndTokenRing(t) {
 }
 function dndTokenInfo(t) {
   if (t.kind !== "pc") return ""; const c = pc(t.ref); if (!c) return ""; const k = dndCalc(c);
-  return `<div class="row" style="justify-content:space-between;gap:8px"><span>HP <b>${k.hp}</b>/${k.hpMax}${c.hpTemp ? ` (+${c.hpTemp})` : ""} · AC <b>${c.ac}</b> · PP ${k.passive.perception}
+  return `<div class="row" style="justify-content:space-between;gap:8px"><span>HP <b>${k.hp}</b>/${k.hpMax}${c.hpTemp ? ` (+${c.hpTemp})` : ""} · AC <b>${k.ac}</b> · PP ${k.passive.perception}
     ${c.conditions.map(x => `<span class="chip red">${x}</span>`).join(" ")}</span>
     <button class="btn sm ghost" data-act="dnd-gm-open" data-id="${esc(c.id)}">Sheet</button></div>`;
 }

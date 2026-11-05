@@ -146,6 +146,7 @@ const dndWeaponText = k => ({ simple: "Simple weapons", martial: "Simple and mar
 function dndStepClass(c, b) {
   const ci = DND_CLASS_INFO[b.cls];
   if (!ci) return `<p class="dnd-b-lead">Your class is your adventurer's calling: how they fight, what they're good at, and whether they cast spells. Pick one to see what it gives you.</p>
+    ${ROLE !== "gm" ? `<p class="faint dnd-small" style="margin:-6px 0 14px">Already have this character on D&D Beyond? <button class="linkish" data-act="ddb-open">Import it instead</button>.</p>` : ""}
     ${dndCards("cls", Object.keys(DND_CLASS_INFO).map(n => ({ id: n, color: DND_CLASSES[n].color, meta: `d${DND_CLASSES[n].hd} hit die · ${DND_CLASS_INFO[n].primary}`, blurb: DND_CLASS_INFO[n].blurb })), b.cls)}`;
   const cl = DND_CLASSES[b.cls]; const opts = ci.skills === "any" ? DND_SKILLS.map(s => s[0]) : ci.skills;
   const profSkills = Object.keys(dndSkillSources(b));
@@ -363,15 +364,15 @@ function dndStepLevels(real, b) {
     dndLvApplyTo(c, st);
   }
   const open = ui.dndBLv > 0 ? ui.dndBLv : ui.dndBLv === -1 ? 0 : firstOpen || 0;
-  const k = dndCalc(c);
+  const k = dndCalc(c); const anyMulti = Object.values(bb.levels || {}).some(x => x && x.cls);
   return `<p class="dnd-b-lead">Each level from 2 to ${b.level}: hit points, and whatever that level asks you to choose. Each one starts from the choices before it.</p>
-    <div class="row" style="gap:8px;margin-bottom:14px"><span class="chip ink">At level ${b.level}: ${k.hpMax} HP</span><span class="chip ink">Proficiency ${sgn(k.pb)}</span>${c.subclass ? `<span class="chip ink">${esc(c.subclass)}</span>` : ""}
+    <div class="row" style="gap:8px;margin-bottom:14px"><span class="chip ink">At level ${b.level}: ${k.hpMax} HP</span><span class="chip ink">Proficiency ${sgn(k.pb)}</span>${anyMulti ? `<span class="chip ink">${esc(dndClassLine(c))}</span>` : ""}${dndClassList(c).filter(e => e.subclass).map(e => `<span class="chip ink">${esc(e.subclass)}</span>`).join("")}
       ${DND_ABILITIES.map(([a]) => `<span class="chip ink">${a.toUpperCase()} ${c.ab[a]}</span>`).join("")}</div>
     <div class="dnd-b-levels">${cards.map(({ n, sec, miss }) => `<section class="dnd-b-lvl ${open === n ? "open" : ""} ${miss.length ? "todo" : "done"}">
       <button class="dnd-b-lvh" data-act="dnd-b-lvopen" data-n="${n}" aria-expanded="${open === n}">
-        <span class="dnd-flvl">${n}</span><span class="dnd-b-lvnames">${esc(sec.newNames.join(", ") || "Hit points and class table improvements")}</span>
+        <span class="dnd-flvl">${n}</span>${anyMulti ? `<span class="chip ${sec.need.isNew ? "blue" : "ink"}">${esc(sec.need.v.cls)} ${sec.need.n}</span>` : ""}<span class="dnd-b-lvnames">${esc(sec.newNames.join(", ") || "Hit points and class table improvements")}</span>
         <span class="chip ${miss.length ? "red" : "green"}">${miss.length ? `${miss.length} to choose` : "Done"}</span></button>
-      ${open === n ? `<div class="dnd-b-lvbody">${sec.news}${sec.choices}
+      ${open === n ? `<div class="dnd-b-lvbody">${sec.clsSec}${sec.news}${sec.choices}
         ${miss.length ? `<p class="faint dnd-small" style="margin:0">Still to do: ${esc(miss.join(", "))}.</p>` : n < bb.level ? `<button class="btn sm" data-act="dnd-b-lvopen" data-n="${n + 1}">Level ${n + 1} →</button>` : ""}</div>` : ""}
     </section>`).join("")}</div>`;
 }
