@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.4.0
+
+Class resources, a combat tracker, and levelling up inside the creator.
+
+- **Class resources:** a panel on the sheet tracks what your class spends: Rage, Bardic Inspiration,
+  Channel Divinity, Divine Intervention, Wild Shape, Second Wind, Action Surge, Indomitable, Focus
+  Points, Lay on Hands, Favored Enemy, Sorcery Points, Innate Sorcery, Magical Cunning, Arcane
+  Recovery and Stroke of Luck, with the right number for your level. Short and long rests give back
+  what the rules say (Second Wind, Rage, Channel Divinity and Wild Shape get one back on a short rest).
+- **Combat tab (GM):** add the party, add monsters from the SRD's 330 stat blocks (search, type and CR
+  filters, average or rolled hit points, several at once) or custom combatants, roll initiative,
+  step through turns and rounds, and apply damage and healing (party damage goes onto their sheets).
+  Each monster's stat block opens in the list with buttons to roll its attacks, damage and crits.
+  Encounter difficulty (Low, Moderate, High) is worked out against the party's XP budget. Place on
+  map puts the monsters on the current map as tokens with health rings, and the map highlights
+  whose turn it is.
+- **Levels in the creator:** start a character above level 1 and a Levels step lists every level
+  from 2 up. Make each level's choices there (hit points, subclass, Ability Score Improvement or
+  feat, fighting styles, expertise and other picks), each one built on the levels before it. Finish
+  makes the whole character at once.
+
 ## 0.3.0
 
 Every spell and piece of equipment in the free rules.

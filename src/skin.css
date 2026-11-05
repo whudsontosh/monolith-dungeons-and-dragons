@@ -460,3 +460,58 @@ table.dnd-inv input{padding:6px 8px}
 .dnd-spbtns .btn.ghost{border-color:var(--line2);font-family:var(--f-display);font-weight:700;color:var(--title)}
 @media (max-width:640px){.dnd-spell{grid-template-columns:24px minmax(0,1fr) auto 30px}}
 }
+
+/* ---------- part 7: class resources, the creator's Levels step, the Combat tab ---------- */
+:root:not([data-skin]){
+.dnd-res{display:grid;gap:12px}
+.dnd-resrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:10px;border-bottom:1px dotted var(--line2)}
+.dnd-resrow:last-child{border-bottom:0;padding-bottom:0}
+.dnd-resrow b{font-family:var(--f-display);font-size:14.5px;color:var(--title);letter-spacing:.02em}
+.dnd-resrow .dnd-pip{width:16px;height:16px}
+.dnd-respool{width:64px;text-align:center;font-family:var(--f-display);font-weight:700;color:var(--title)}
+
+.dnd-b-levels{display:grid;gap:10px}
+.dnd-b-lvl{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--line2);border-radius:6px;box-shadow:var(--lit)}
+.dnd-b-lvl.todo{border-left-color:var(--bad)}
+.dnd-b-lvl.done{border-left-color:var(--ok)}
+.dnd-b-lvh{display:flex;align-items:center;gap:12px;width:100%;padding:12px 14px;background:transparent;border:0;text-align:left;color:var(--ink)}
+.dnd-b-lvh:hover{background:rgba(201,162,79,.08)}
+.dnd-b-lvnames{flex:1;min-width:0;font-family:var(--f-display);font-weight:600;font-size:14px;color:var(--title);letter-spacing:.02em}
+.dnd-b-lvbody{display:grid;gap:12px;padding:0 14px 14px}
+
+.dnd-cbbar{gap:8px;margin-bottom:14px}
+.dnd-xpbar{margin-bottom:14px}
+.dnd-cblist{display:grid;gap:0;padding:6px 12px}
+.dnd-cbrow{display:grid;grid-template-columns:62px minmax(0,1.4fr) 56px minmax(120px,.8fr) auto auto;gap:12px;align-items:center;padding:10px 8px;border-bottom:1px solid var(--line);border-left:3px solid transparent}
+.dnd-cbrow:last-child{border-bottom:0}
+.dnd-cbrow.pc .dnd-cbname b{color:var(--info)}
+.dnd-cbrow.on{background:rgba(201,162,79,.16);border-left-color:var(--gold)}
+.dnd-cbrow.out{opacity:.55}
+.dnd-cbinit{width:58px;text-align:center;font-family:var(--f-display);font-weight:700;font-size:18px;color:var(--title);padding:6px 4px}
+.dnd-cbname{display:grid;gap:2px;min-width:0}
+.dnd-cbname b{font-family:var(--f-display);font-size:16px;color:var(--title);letter-spacing:.02em}
+.dnd-cbac{display:grid;justify-items:center;line-height:1.1}
+.dnd-cbac b{font-family:var(--f-display);font-size:20px;color:var(--title)}
+.dnd-cbac .label{font-size:9px}
+.dnd-cbhp b{font-family:var(--f-display);font-size:18px;color:var(--title)}
+.dnd-cbhp .meter{margin-top:4px;height:5px;border-radius:3px;overflow:hidden}
+.dnd-cbdmg{flex-wrap:nowrap;gap:4px}
+.dnd-cbamt{width:64px;padding:6px}
+.dnd-cbblock{grid-column:1/-1}
+@media (max-width:1000px){.dnd-cbrow{grid-template-columns:56px minmax(0,1fr) 48px minmax(100px,1fr)}.dnd-cbdmg,.dnd-cbrow>.row:last-of-type{grid-column:span 2}}
+
+.dnd-statblock{background:linear-gradient(180deg,#fbf3df,#f5e9cd);border:1px solid var(--line2);border-top:3px solid var(--edge);border-bottom:3px solid var(--edge);border-radius:4px;padding:14px 16px;box-shadow:var(--lit)}
+.dnd-statblock h3{font-size:22px;margin:0}
+.dnd-sbsub{margin:0 0 10px;font-style:italic;color:var(--ink2)}
+.dnd-statblock h4{font-family:var(--f-display);font-size:15px;color:var(--title);letter-spacing:.06em;margin:14px 0 6px;padding-bottom:3px;background:linear-gradient(90deg,var(--edge),transparent) left bottom/100% 1px no-repeat}
+.dnd-sbtop{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 16px;padding:8px 0;border-top:1px solid rgba(156,43,27,.35);border-bottom:1px solid rgba(156,43,27,.35)}
+.dnd-sbtop b,.dnd-sblines b{color:var(--title)}
+.dnd-sbabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin:8px 0;text-align:center}
+.dnd-sbabs div{display:grid;padding:4px 0;background:rgba(156,43,27,.06);border-radius:3px}
+.dnd-sbabs b{font-family:var(--f-display);color:var(--title)}
+.dnd-sbabs span{font-size:12.5px}
+.dnd-sblines{display:grid;gap:2px;padding-bottom:8px;border-bottom:1px solid rgba(156,43,27,.35);font-size:14.5px}
+.dnd-sbact p{margin:6px 0 2px;font-size:14.5px;line-height:1.45}
+.dnd-sbrolls{gap:6px;margin:2px 0 6px}
+.dnd-moncount{width:52px;padding:5px;text-align:center}
+}

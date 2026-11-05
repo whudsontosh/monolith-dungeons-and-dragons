@@ -6,7 +6,9 @@
    While a character is being built, every choice lives in c.build (nothing else changes). Finish
    turns those choices into the real sheet (dndFinishBuild) and clears c.build. */
 
-const DND_STEPS = [["class", "Class"], ["bg", "Background"], ["species", "Species"], ["abilities", "Abilities"], ["equip", "Equipment"], ["review", "Name & finish"]];
+const DND_STEPS_ALL = [["class", "Class"], ["bg", "Background"], ["species", "Species"], ["abilities", "Abilities"], ["levels", "Levels"], ["equip", "Equipment"], ["review", "Name & finish"]];
+/* the Levels step only appears when the character starts above level 1 */
+const dndStepsFor = b => DND_STEPS_ALL.filter(([id]) => id !== "levels" || (b && b.level > 1));
 const DND_SKILL_NAME = Object.fromEntries(DND_SKILLS.map(([k, n]) => [k, n]));
 
 function dndNewBuild() {
@@ -14,7 +16,7 @@ function dndNewBuild() {
     bg: "", cAbs: [], cSkills: [], cFeat: "", cTool: "", bgMode: "21", plus2: "", plus1: "",
     species: "", lineage: "", keen: "", skillful: "", versatile: "", skilled: [],
     method: "array", arr: {}, pb: { str: 8, dex: 8, con: 8, int: 8, wis: 8, cha: 8 }, rolls: [], man: { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
-    choices: {}, kitCls: -1, kitBg: -1, armor: "", shield: false, weapons: [], gear: "", gp: 0,
+    choices: {}, levels: {}, kitCls: -1, kitBg: -1, armor: "", shield: false, weapons: [], gear: "", gp: 0,
     name: "", alignment: "", player: "", appearance: "", notes: "", color: "" };
 }
 function dndB(c) { const b = { ...dndNewBuild(), ...(c.build || {}) }; c.build = b; return b; }
@@ -61,7 +63,7 @@ function dndArmorAc(b, tot) {
 }
 
 /* how many choices each step still needs */
-function dndOpen(b) {
+function dndOpen(b, c) {
   const ci = DND_CLASS_INFO[b.cls]; const bg = dndBgOf(b); const sp = DND_SPECIES_INFO[b.species];
   const o = { class: 0, bg: 0, species: 0, abilities: 0, equip: 0, review: 0 };
   if (!ci) o.class = 1; else { o.class += Math.max(0, ci.pick - b.clsSkills.length); if (ci.expertise) o.class += Math.max(0, ci.expertise - b.expertise.length);
@@ -76,6 +78,7 @@ function dndOpen(b) {
     if (sp.feat) { if (!b.versatile) o.species++; else if (b.versatile === "Skilled" && !(bg && bg.feat === "Skilled")) o.species += Math.max(0, dndSkilledCount(b) - b.skilled.length); } }
   const base = dndBase(b); o.abilities = DND_ABILITIES.filter(([a]) => base[a] == null).length + (b.method === "point" && dndPointsLeft(b) < 0 ? 1 : 0);
   if (!b.name.trim()) o.review = 1;
+  o.levels = c && b.level > 1 && ci ? dndLevelsMissing(c).reduce((a, m) => a + m.length, 0) : 0;
   return o;
 }
 
@@ -84,10 +87,10 @@ function dndL1Picks(b) { const L = DND_LEVELS[b.cls]; if (!L) return []; return 
 
 /* ---------- the creator page ---------- */
 function dndBuilderView(c) {
-  const b = dndB(c); const open = dndOpen(b); const step = b.step;
+  const b = dndB(c); const open = dndOpen(b, c); const step = b.step;
   const left = Object.values(open).reduce((a, n) => a + n, 0);
-  const idx = DND_STEPS.findIndex(s => s[0] === step);
-  const body = step === "bg" ? dndStepBg(c, b) : step === "species" ? dndStepSpecies(c, b) : step === "abilities" ? dndStepAbilities(c, b)
+  const STEPS = dndStepsFor(b); if (!STEPS.some(x => x[0] === step)) { b.step = "abilities"; } const idx = STEPS.findIndex(s => s[0] === b.step);
+  const body = step === "levels" && b.level > 1 ? dndStepLevels(c, b) : step === "bg" ? dndStepBg(c, b) : step === "species" ? dndStepSpecies(c, b) : step === "abilities" ? dndStepAbilities(c, b)
     : step === "equip" ? dndStepEquip(c, b) : step === "review" ? dndStepReview(c, b, open, left) : dndStepClass(c, b);
   const summary = [b.level > 1 ? `Level ${b.level}` : "", b.lineage && b.species !== "Human" ? b.lineage : b.species, b.cls].filter(Boolean).join(" ");
   return `<div class="dnd dnd-b" data-cid="${esc(c.id)}">
@@ -96,12 +99,12 @@ function dndBuilderView(c) {
       <div class="dnd-headtools"><span class="faint dnd-small">${left ? `${left} choice${left === 1 ? "" : "s"} left` : "Ready to finish"}</span>
         <button class="btn sm ghost" data-act="dnd-b-skip" title="Fill in the sheet by hand instead">Skip to the sheet</button></div>
     </div>
-    <nav class="dnd-steps" aria-label="Creator steps">${DND_STEPS.map(([id, l], i) => `<button class="${step === id ? "on" : ""} ${open[id] ? "" : "done"}" data-act="dnd-b-step" data-s="${id}">
+    <nav class="dnd-steps" aria-label="Creator steps">${STEPS.map(([id, l], i) => `<button class="${step === id ? "on" : ""} ${open[id] ? "" : "done"}" data-act="dnd-b-step" data-s="${id}">
       <span class="dnd-stepn">${open[id] ? i + 1 : "✓"}</span><span>${l}</span>${open[id] && id !== "equip" ? `<span class="dnd-badge" title="${open[id]} choice${open[id] === 1 ? "" : "s"} left">${open[id]}</span>` : ""}</button>`).join("")}</nav>
     ${body}
     <div class="dnd-b-nav">
-      ${idx > 0 ? `<button class="btn" data-act="dnd-b-step" data-s="${DND_STEPS[idx - 1][0]}">← ${DND_STEPS[idx - 1][1]}</button>` : "<span></span>"}
-      ${idx < DND_STEPS.length - 1 ? `<button class="btn primary" data-act="dnd-b-step" data-s="${DND_STEPS[idx + 1][0]}">${DND_STEPS[idx + 1][1]} →</button>` : ""}
+      ${idx > 0 ? `<button class="btn" data-act="dnd-b-step" data-s="${STEPS[idx - 1][0]}">← ${STEPS[idx - 1][1]}</button>` : "<span></span>"}
+      ${idx < STEPS.length - 1 ? `<button class="btn primary" data-act="dnd-b-step" data-s="${STEPS[idx + 1][0]}">${STEPS[idx + 1][1]} →</button>` : ""}
     </div>
   </div>`;
 }
@@ -151,7 +154,7 @@ function dndStepClass(c, b) {
       <div style="display:grid;gap:14px;align-content:start">
         <section class="dnd-b-choice"><div class="dnd-b-choice-h"><h3>Starting level</h3></div>
           <div class="row"><select data-dnd="build.level" data-num aria-label="Starting level">${Array.from({ length: 20 }, (_, i) => `<option value="${i + 1}" ${b.level === i + 1 ? "selected" : ""}>Level ${i + 1}</option>`).join("")}</select>
-          <span class="faint dnd-small">Most campaigns start at level 1. ${b.level > 1 ? `After Finish you'll make the choices for levels 2 to ${b.level} one level at a time: hit points, subclass, ability increases and feats.` : ""}</span></div></section>
+          <span class="faint dnd-small">Most campaigns start at level 1. ${b.level > 1 ? `You'll make the choices for levels 2 to ${b.level} (hit points, subclass, ability increases, feats and more) in the Levels step, after your ability scores.` : ""}</span></div></section>
         ${dndChoice(`Skill proficiencies: choose ${ci.pick}`, ci.pick, b.clsSkills.length, dndSkillChips(b, "clsSkills", opts, ci.pick), ci.skills === "any" ? "Bards can pick any skills." : "")}
         ${ci.expertise ? dndChoice(`Expertise: choose ${ci.expertise}`, ci.expertise, b.expertise.length,
           profSkills.length ? `<div class="dnd-chips">${profSkills.map(s => { const on = b.expertise.includes(s); return `<button class="dnd-chip ${on ? "on" : ""}" data-act="dnd-b-toggle" data-k="expertise" data-v="${s}" data-max="${ci.expertise}" ${!on && b.expertise.length >= ci.expertise ? "disabled" : ""}>${esc(DND_SKILL_NAME[s])}</button>`; }).join("")}</div>` : `<p class="faint dnd-small" style="margin:0">Choose your skill proficiencies first.</p>`,
@@ -302,10 +305,10 @@ function dndStepEquip(c, b) {
 function dndStepReview(c, b, open, left) {
   const tot = dndTotals(b); const ci = DND_CLASS_INFO[b.cls]; const cl = DND_CLASSES[b.cls]; const bg = dndBgOf(b);
   const conMod = dndMod(tot.con ?? 10); const sp = DND_SPECIES_INFO[b.species];
-  const hp = cl ? Math.max(1, cl.hd + conMod + (b.level - 1) * (cl.hd / 2 + 1 + conMod) + (sp && sp.hpPerLvl ? b.level : 0)) : "—";
+  const sim = cl ? dndBuildSim(c, b.level) : null; const hp = sim ? dndCalc(sim).hpMax : "—";
   const skills = Object.keys(dndSkillSources(b)).sort().map(s => DND_SKILL_NAME[s] + (b.expertise.includes(s) ? " (expertise)" : ""));
   const swatches = ["", "#8a2d1c", "#b08a2e", "#4f6b2f", "#2f6b6b", "#2f4a7a", "#4a2f6b", "#7a3a6e", "#5b4636", "#3a3f4a"];
-  const missing = DND_STEPS.filter(([id]) => open[id] && id !== "equip").map(([id, l]) => `<button class="btn sm" data-act="dnd-b-step" data-s="${id}">${l}: ${open[id]} left</button>`).join("");
+  const missing = dndStepsFor(b).filter(([id]) => open[id] && id !== "equip").map(([id, l]) => `<button class="btn sm" data-act="dnd-b-step" data-s="${id}">${l}: ${open[id]} left</button>`).join("");
   return `<div class="dnd-b-cols">
     <div style="display:grid;gap:14px;align-content:start">
       ${dndChoice("Name", 1, b.name.trim() ? 1 : 0, dndText(c, "build.name", b.name, `placeholder="What do people call you?" aria-label="Character name"`))}
@@ -320,19 +323,64 @@ function dndStepReview(c, b, open, left) {
     <section class="panel dnd-b-review"><div class="panel-h"><h3>Your character</h3></div><div class="panel-b" style="display:grid;gap:14px">
       <div class="dnd-b-revhead"><span class="dnd-emblem lg" style="background:${esc(b.color || (cl ? cl.color : "#556070"))}">${esc((b.name || "?").charAt(0).toUpperCase())}</span>
         <div><h2>${esc(b.name || "Unnamed")}</h2><div class="dnd-b-meta">${esc([`Level ${b.level}`, b.species && (b.lineage && b.species !== "Dragonborn" && b.species !== "Goliath" ? b.lineage : b.species), b.cls].filter(Boolean).join(" ") || "—")}${bg ? " · " + esc(b.bg === "Custom" ? "Custom background" : b.bg) : ""}</div></div></div>
-      <div class="dnd-b-revabs">${DND_ABILITIES.map(([a]) => `<div><span class="label">${a.toUpperCase()}</span><b>${tot[a] ?? "—"}</b><span class="faint">${tot[a] == null ? "" : sgn(dndMod(tot[a]))}</span></div>`).join("")}</div>
+      <div class="dnd-b-revabs">${DND_ABILITIES.map(([a]) => `<div><span class="label">${a.toUpperCase()}</span><b>${(sim && tot[a] != null ? sim.ab[a] : tot[a]) ?? "—"}</b><span class="faint">${tot[a] == null ? "" : sgn(dndMod(sim ? sim.ab[a] : tot[a]))}</span></div>`).join("")}</div>
       ${dndFacts([["Hit points", String(hp)], ["Armor Class", String(dndArmorAc(b, tot))], ["Saving throws", cl ? cl.saves.map(a => DND_AB_NAME[a]).join(", ") : ""],
-        ["Skills", esc(skills.join(", "))], ["Feats", esc(dndFeatsOf(b).join(", "))], ["Weapons", esc([...new Set(b.weapons)].join(", "))]])}
+        ["Skills", esc(skills.join(", "))], ["Feats", esc(sim ? sim.feats.map(f => f.n).join(", ") : dndFeatsOf(b).join(", "))], ["Subclass", sim && sim.subclass ? esc(sim.subclass) : ""], ["Weapons", esc([...new Set(b.weapons)].join(", "))]])}
       ${left ? `<div class="banner warnb" style="display:grid;gap:8px"><b>A few choices are still open:</b><div class="row" style="gap:6px">${missing}</div></div>` : ""}
       <button class="btn primary dnd-finish" data-act="dnd-b-finish" ${left ? "disabled" : ""}>Finish and open the sheet</button>
     </div></section>
   </div>`;
 }
 
+/* ----- 5. Levels (only when starting above level 1) -----
+   A preview character is built at level 1 from the earlier steps, then each level's choices are
+   applied in turn, so every level sees the ability scores, subclass and picks before it. */
+function dndBuildSim(real, upTo) {
+  const c = clone(real); const b = clone(dndB(c)); dndFinishBuild(c); c.build = null;
+  for (let n = 2; n <= Math.min(upTo, b.level); n++) dndLvApplyTo(c, { ...dndLvBlank(), ...((b.levels || {})[n] || {}) });
+  return c;
+}
+function dndLevelsMissing(real) {
+  const out = []; const c = clone(real); const bb = clone(dndB(c)); dndFinishBuild(c); c.build = null;
+  for (let n = 2; n <= bb.level; n++) { const st = { ...dndLvBlank(), ...((bb.levels || {})[n] || {}) }; out.push(dndLvMissing(c, st)); dndLvApplyTo(c, st); }
+  return out;
+}
+function dndFinishAll(c) {
+  const b = clone(dndB(c)); dndFinishBuild(c);
+  for (let n = 2; n <= b.level; n++) dndLvApplyTo(c, { ...dndLvBlank(), ...((b.levels || {})[n] || {}) });
+  c.hp = null; c.pendingLevel = 0; delete c.__subAsked;
+}
+Object.assign(ui, { dndBLv: 0 });
+function dndStepLevels(real, b) {
+  if (!DND_LEVELS[b.cls]) return `<p class="dnd-b-lead">Pick a class first.</p>`;
+  const c = clone(real); const bb = clone(b); dndFinishBuild(c); c.build = null;
+  const cards = []; let firstOpen = 0;
+  for (let n = 2; n <= bb.level; n++) {
+    const st = { ...dndLvBlank(), ...((bb.levels || {})[n] || {}) };
+    const sec = dndLvSections(c, st, "b:" + n); const miss = dndLvMissing(c, st);
+    if (miss.length && !firstOpen) firstOpen = n;
+    cards.push({ n, sec, miss });
+    dndLvApplyTo(c, st);
+  }
+  const open = ui.dndBLv > 0 ? ui.dndBLv : ui.dndBLv === -1 ? 0 : firstOpen || 0;
+  const k = dndCalc(c);
+  return `<p class="dnd-b-lead">Each level from 2 to ${b.level}: hit points, and whatever that level asks you to choose. Each one starts from the choices before it.</p>
+    <div class="row" style="gap:8px;margin-bottom:14px"><span class="chip ink">At level ${b.level}: ${k.hpMax} HP</span><span class="chip ink">Proficiency ${sgn(k.pb)}</span>${c.subclass ? `<span class="chip ink">${esc(c.subclass)}</span>` : ""}
+      ${DND_ABILITIES.map(([a]) => `<span class="chip ink">${a.toUpperCase()} ${c.ab[a]}</span>`).join("")}</div>
+    <div class="dnd-b-levels">${cards.map(({ n, sec, miss }) => `<section class="dnd-b-lvl ${open === n ? "open" : ""} ${miss.length ? "todo" : "done"}">
+      <button class="dnd-b-lvh" data-act="dnd-b-lvopen" data-n="${n}" aria-expanded="${open === n}">
+        <span class="dnd-flvl">${n}</span><span class="dnd-b-lvnames">${esc(sec.newNames.join(", ") || "Hit points and class table improvements")}</span>
+        <span class="chip ${miss.length ? "red" : "green"}">${miss.length ? `${miss.length} to choose` : "Done"}</span></button>
+      ${open === n ? `<div class="dnd-b-lvbody">${sec.news}${sec.choices}
+        ${miss.length ? `<p class="faint dnd-small" style="margin:0">Still to do: ${esc(miss.join(", "))}.</p>` : n < bb.level ? `<button class="btn sm" data-act="dnd-b-lvopen" data-n="${n + 1}">Level ${n + 1} →</button>` : ""}</div>` : ""}
+    </section>`).join("")}</div>`;
+}
+
 /* ---------- Finish: turn the choices into the sheet ---------- */
 function dndFinishBuild(c) {
-  const b = dndB(c); const ci = DND_CLASS_INFO[b.cls]; const cl = DND_CLASSES[b.cls]; const bg = dndBgOf(b); const sp = DND_SPECIES_INFO[b.species]; const tot = dndTotals(b);
-  c.name = b.name.trim(); c.cls = b.cls; c.level = 1; c.pendingLevel = b.level > 1 ? b.level : 0; c.species = b.species; c.background = b.bg === "Custom" ? "" : b.bg;
+  const b = dndB(c); const ci = DND_CLASS_INFO[b.cls] || { features: [], armor: [], weapons: "", tools: "" }; const cl = DND_CLASSES[b.cls] || { saves: [] };
+  const bg = dndBgOf(b) || { abs: [], skills: [], tool: "", feat: "" }; const sp = DND_SPECIES_INFO[b.species] || { traits: [] }; const tot = dndTotals(b);
+  c.name = b.name.trim(); c.cls = b.cls; c.level = 1; c.pendingLevel = 0; c.species = b.species; c.background = b.bg === "Custom" ? "" : b.bg;
   c.alignment = b.alignment; c.player = b.player; c.appearance = b.appearance; c.notes = b.notes; c.color = b.color;
   DND_ABILITIES.forEach(([a]) => { c.ab[a] = tot[a] ?? 10; c.saveProf[a] = cl.saves.includes(a); });
   c.skills = {}; Object.keys(dndSkillSources(b)).forEach(s => { c.skills[s] = b.expertise.includes(s) ? 2 : 1; });
@@ -395,10 +443,10 @@ Object.assign(A, {
     if (DND_POINT_COST[n] - DND_POINT_COST[b.pb[a]] > dndPointsLeft(b)) return false; b.pb[a] = n; }),
   "dnd-b-wpn": dndAct((c, el) => { const b = dndB(c); const v = el.dataset.v;
     if (Number(el.dataset.d) > 0) { if (b.weapons.length < 30) b.weapons = [...b.weapons, v]; } else { const i = b.weapons.lastIndexOf(v); if (i >= 0) b.weapons = b.weapons.filter((_, j) => j !== i); } }),
-  "dnd-b-finish": dndAct(c => { const b = dndB(c); const left = Object.values(dndOpen(b)).reduce((a, n) => a + n, 0); if (left) return false;
-    const name = b.name; dndFinishBuild(c); ui.view = "sheet"; ui.dndTab = "sheet"; setTimeout(() => window.scrollTo(0, 0), 0);
-    if (c.pendingLevel > 1) setTimeout(() => dndLvStart(c), 0);
-    else showNotice(`${name} is ready. Everything's on the sheet now, and you can change any of it.`); }),
+  "dnd-b-finish": dndAct(c => { const b = dndB(c); const left = Object.values(dndOpen(b, c)).reduce((a, n) => a + n, 0); if (left) return false;
+    const name = b.name; const lvl = b.level; dndFinishAll(c); ui.view = "sheet"; ui.dndTab = "sheet"; setTimeout(() => window.scrollTo(0, 0), 0);
+    showNotice(`${name} is ready${lvl > 1 ? ` at level ${lvl}` : ""}. Everything's on the sheet now, and you can change any of it.`); }),
+  "dnd-b-lvopen": dndAct((c, el) => { const n = Number(el.dataset.n); ui.dndBLv = ui.dndBLv === n ? -1 : n; return false; }, false),
   "dnd-b-choice": dndAct((c, el) => { const b = dndB(c); b.choices = b.choices || {}; const p = el.dataset.pool, v = el.dataset.v, max = Number(el.dataset.max) || 1; const l = b.choices[p] || [];
     b.choices[p] = l.includes(v) ? l.filter(x => x !== v) : l.length < max ? [...l, v] : l; }),
   "dnd-b-skip": dndAct(c => { const b = dndB(c);

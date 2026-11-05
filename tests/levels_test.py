@@ -5,13 +5,13 @@ from playwright.async_api import async_playwright
 from harness import *
 
 # fills in whatever the open Level up dialog asks for, the first option each time
-AUTO = """(mode)=>{const c=dndLvFind();const st=ui.lvl;for(let pass=0;pass<2;pass++){const n=dndLvNeeds(c);
+AUTO = """(mode)=>{const c=dndLvFind();const st=ui.lvl;for(let pass=0;pass<2;pass++){const n=dndLvNeeds(c,st);
   if(n.needSub&&!st.sub)st.sub=DND_LEVELS[c.cls].sub.n;
   if(n.asi&&mode!=='feat'){st.asi='asi';st.asiMode='11';const abs=DND_ABILITIES.map(a=>a[0]).filter(a=>c.ab[a]<20);st.a1=abs[0];st.b1=abs[1]}
   n.picks.forEach(p=>{if(!(st.picks[p.pool]||[]).length)st.picks[p.pool]=p.options.slice(0,p.count).map(o=>o.n)});
   if(n.styles&&!(st.picks.__style||[]).length)st.picks.__style=[DND_FEAT_LIST.filter(f=>f.cat==='fighting-style'&&!c.feats.some(x=>x.n===f.n))[0].n];
   if(n.expertise&&!st.exp.length)st.exp=Object.keys(c.skills).filter(s=>c.skills[s]===1).slice(0,2)}
-  renderModal();return dndLvMissing(c)}"""
+  renderModal();return dndLvMissing(c,st)}"""
 
 async def main():
     async with async_playwright() as p:
@@ -78,21 +78,31 @@ async def main():
         await shot("l5-creator-class")
         await pl.evaluate("""()=>{const c=curChar();Object.assign(c.build,{bg:'Soldier',plus2:'str',plus1:'con',species:'Orc',method:'array',name:'Grusk'});
           const ci=DND_CLASS_INFO.Fighter;const t=new Set();DND_ABILITIES.forEach(([a])=>{const i=DND_STANDARD_ARRAY.findIndex((v,j)=>v===ci.array[a]&&!t.has(j));t.add(i);c.build.arr[a]=i});saveChar(c,true);render()}""")
-        await pl.wait_for_timeout(200); await click("[data-act=dnd-b-step][data-s=review]"); await click("[data-act=dnd-b-finish]"); await pl.wait_for_timeout(300)
-        ok(await pl.locator(".modal:has-text('Level 1 → 2')").count() == 1 and await pl.locator(".modal:has-text('Building to level 5')").count() == 1, "Finish at level 5 walks through level 2 first")
-        await level()
-        ok(await pl.locator(".modal:has-text('Level 2 → 3')").count() == 1, "then level 3")
-        miss = await pl.evaluate(AUTO, "")
-        ok(await pl.evaluate("ui.lvl.sub") == "Champion", "level 3 asks for the subclass")
-        await shot("l6-subclass"); await click("[data-act=dnd-lv-apply]")
-        # level 4: take the Grappler feat (+1 STR)
-        await click("[data-act=dnd-lv-set][data-k=asi][data-v=feat]")
-        await pl.select_option("[data-act-change=dnd-lv][data-k=feat]", "Grappler"); await pl.wait_for_timeout(120)
-        await pl.select_option("[data-act-change=dnd-lv][data-k=featAb]", "str"); await pl.wait_for_timeout(120)
-        await click("[data-act=dnd-lv-apply]"); await level()
+        await pl.wait_for_timeout(200)
+        ok(await pl.locator(".dnd-steps [data-s=levels]").count() == 1, "starting at level 5 adds a Levels step")
+        ok(await pl.evaluate("dndOpen(curChar().build, curChar()).levels") == 2, "the Levels step asks for a subclass (3) and an ability increase or feat (4)")
+        await click(".dnd-steps [data-s=levels]")
+        ok(await pl.locator(".dnd-b-lvl").count() == 4 and await pl.locator(".dnd-b-lvl.open:has(.dnd-flvl:text-is('3'))").count() == 1, "levels 2 to 5 are listed, and the first one with a choice (3) is open")
+        await click("[data-act=dnd-lv-set][data-w='b:3'][data-k=sub][data-v=Champion]")
+        await shot("l6-subclass")
+        ok(await pl.locator(".dnd-b-lvl.open:has(.dnd-flvl:text-is('4'))").count() == 1, "choosing the subclass moves on to level 4")
+        # level 4: take the Grappler feat (+1 STR), and roll hit points
+        await click("[data-act=dnd-lv-set][data-w='b:4'][data-k=asi][data-v=feat]")
+        await pl.select_option("[data-act-change=dnd-lv][data-w='b:4'][data-k=feat]", "Grappler"); await pl.wait_for_timeout(150)
+        await pl.select_option("[data-act-change=dnd-lv][data-w='b:4'][data-k=featAb]", "str"); await pl.wait_for_timeout(150)
+        ok(await pl.evaluate("dndOpen(curChar().build, curChar()).levels") == 0, "all level choices made")
+        await click("[data-act=dnd-b-lvopen][data-n='5']")
+        await click("[data-act=dnd-lv-set][data-w='b:5'][data-k=hp][data-v=roll]")
+        await pl.evaluate("window.__r=Math.random;Math.random=()=>0.99"); await click("[data-act=dnd-lv-roll][data-w='b:5']"); await pl.evaluate("Math.random=window.__r")
+        ok(await pl.evaluate("curChar().build.levels[5].roll") == 10, "level 5 hit points rolled in the creator (a 10)")
+        await shot("l6b-levels")
+        await click("[data-act=dnd-b-step][data-s=review]")
+        ok("Champion" in await pl.inner_text(".dnd-b-review") and "Grappler" in await pl.inner_text(".dnd-b-review"), "the review shows the subclass and feat")
+        await click("[data-act=dnd-b-finish]"); await pl.wait_for_timeout(300)
+        ok(await pl.evaluate("ui.modal") is None, "Finish goes straight to the sheet, with no level-up dialogs")
         c = await pl.evaluate("(()=>{const c=curChar();const k=dndCalc(c);return [c.level,c.subclass,c.ab.str,c.feats.map(f=>f.n),c.choices,ui.modal,k.hpMax,c.pendingLevel]})()"); print(c)
         ok(c[0] == 5 and c[1] == "Champion" and c[2] == 18 and "Grappler" in c[3] and c[4] == {"Fighting Style": ["Defense"]} and c[5] is None and c[7] == 0, "Grusk reaches level 5: Champion, Grappler (STR 18), Defense style")
-        ok(c[6] == 10 + 2 + 4 * (6 + 2), "Fighter 5 HP with CON 14: 44")
+        ok(c[6] == 10 + 2 + 3 * (6 + 2) + (10 + 2), "Fighter 5 HP with CON 14: 12 + 3 × 8 (average) + 12 (the rolled 10) = 48")
         await click("[data-act=dnd-tab][data-t=features]")
         txt = await pl.inner_text(".dnd")
         ok("Improved Critical" in txt and "Extra Attack" in txt and "Tactical Shift" in txt and "Defense" in txt, "Fighter features, Champion features and the chosen style are listed")

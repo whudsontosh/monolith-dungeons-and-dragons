@@ -33,9 +33,9 @@ const DND_SAMPLE = dndNormalize({
 });
 
 function dndCard(c) {
-  if (c.build) { const b = c.build; const i = Math.max(0, DND_STEPS.findIndex(s => s[0] === b.step));
+  if (c.build) { const b = c.build; const steps = dndStepsFor(b); const i = Math.max(0, steps.findIndex(s => s[0] === b.step));
     return { name: b.name || "New character", sub: [b.species, b.cls].filter(Boolean).join(" ") || "In the character creator", color: b.color || (DND_CLASSES[b.cls] || {}).color || "#556070",
-      initial: (b.name || "?").charAt(0).toUpperCase(), chips: [{ t: `Draft · step ${i + 1} of ${DND_STEPS.length}`, c: "blue" }], draft: true, openLabel: "Continue building" }; }
+      initial: (b.name || "?").charAt(0).toUpperCase(), chips: [{ t: `Draft · step ${i + 1} of ${steps.length}`, c: "blue" }], draft: true, openLabel: "Continue building" }; }
   const k = dndCalc(c); const done = !!(c.name && c.cls);
   return {
     name: dndName(c), sub: [`Level ${c.level}`, c.species, c.cls].filter(Boolean).join(" "),
@@ -52,6 +52,8 @@ Monolith.hooks.trayQuick = () => [["d4", "1D4"], ["d6", "1D6"], ["d8", "1D8"], [
 
 Monolith.registerGame({
   id: "dnd", api: 1, diceLabel: "D20",
+  // the 3D dice (Monolith 1.1): oxblood with gold edges and numbers
+  dice: { body: "#5a160c", edge: "#c9a24f", text: "#f3e6c8", high: "#ffd36b", low: "#f0937f", font: '"Cinzel",Georgia,serif' },
   rulesets: { "dnd5.5e": {
     name: "5.5e",
     character: {
@@ -70,11 +72,22 @@ Monolith.registerGame({
       onOpen: c => { ui.dndTab = c.cls ? "sheet" : "details"; ui.dndEdit = null; ui.dndAdv = "normal"; },
       tablePanel: c => dndTablePanel(c),
     },
+    campaign: {
+      defaults: () => ({ combat: { round: 1, turn: 0, list: [] } }),
+      normalize: s => { const c = s.combat && typeof s.combat === "object" ? s.combat : {}; s.combat = { round: Math.max(1, Number(c.round) || 1), turn: Math.max(0, Number(c.turn) || 0), list: Array.isArray(c.list) ? c.list.slice(0, 200) : [] }; },
+      summary: s => (s.combat && s.combat.list && s.combat.list.length ? `A fight in round ${s.combat.round}` : ""),
+    },
     gm: {
       charNoun: ["character", "characters"],
       partyTable: list => dndPartyTable(list),
       characterView: c => dndSheetView(c),
-      tokenRing: t => dndTokenRing(t), tokenInfo: t => dndTokenInfo(t),
+      // the Combat tab and monsters come from combat.js, which only the GM's page loads
+      tabs: [{ id: "combat", label: () => "Combat", view: () => typeof dndCombatTab === "function" ? dndCombatTab() : "", order: 20 }],
+      tokenRing: t => t.kind === "pc" ? dndTokenRing(t) : typeof dndCbTokenRing === "function" ? dndCbTokenRing(t) : null,
+      tokenInfo: t => t.kind === "pc" ? dndTokenInfo(t) : typeof dndCbTokenInfo === "function" ? dndCbTokenInfo(t) : "",
+      activeTurn: () => typeof dndCbActiveTurn === "function" ? dndCbActiveTurn() : null,
+      tokenButtons: m => typeof dndCbTokenButtons === "function" ? dndCbTokenButtons(m) : "",
+      onRemoveCharacter: id => { if (typeof dndCbRemoveCharacter === "function") dndCbRemoveCharacter(id); },
     },
   }},
 });

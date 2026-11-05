@@ -1,0 +1,107 @@
+"""Class resources on the sheet (spend, short and long rests) and the GM's Combat tab: party and SRD
+monsters, initiative, turns, damage, stat block rolls, encounter difficulty and placing monsters on the map."""
+import asyncio, sys, os
+from playwright.async_api import async_playwright
+from harness import *
+
+async def main():
+    async with async_playwright() as p:
+        b = await p.chromium.launch()
+        pl = await page(b, "P", "player.html")
+        async def click(pg, sel): await pg.click(sel); await pg.wait_for_timeout(120)
+        async def shot(pg, n): await pg.screenshot(path=OUT + f"/{n}.png", full_page=True)
+
+        # ---------- class resources: a level 5 Fighter ----------
+        await click(pl, ".card:has-text('Ilyra Venn') [data-act=open-char]"); await click(pl, "[data-act=copy-sample]")
+        await pl.evaluate("()=>{const c=curChar();c.cls='Fighter';c.subclass='Champion';c.level=5;c.name='Brann';saveChar(c,true);render()}"); await pl.wait_for_timeout(200)
+        r = await pl.evaluate("dndResources(curChar()).map(r=>[r.n,r.max,r.rest])"); print(r)
+        ok(r == [["Second Wind", 3, "short1"], ["Action Surge", 1, "short"], ["Indomitable", 0, "long"]][:2], "a level 5 Fighter has 3 Second Winds and 1 Action Surge (Indomitable starts at 9)")
+        ok(await pl.locator(".panel:has(h3:text-is('Class resources')) .dnd-resrow").count() == 2, "the sheet shows a Class resources panel")
+        await click(pl, "[data-act=dnd-res][data-k=sw][data-i='2']"); await click(pl, "[data-act=dnd-res][data-k=sw][data-i='1']")
+        await click(pl, "[data-act=dnd-res][data-k=as][data-i='0']")
+        ok(await pl.evaluate("[curChar().res.sw,curChar().res.as]") == [2, 1], "spending two Second Winds and the Action Surge")
+        await shot(pl, "r1-resources")
+        await click(pl, "[data-act=dnd-short]")
+        ok(await pl.evaluate("[curChar().res.sw,curChar().res.as]") == [1, 0], "a short rest gives back one Second Wind and the Action Surge")
+        await click(pl, "[data-act=dnd-long]")
+        ok(await pl.evaluate("curChar().res.sw") == 0, "a long rest gives back the rest")
+        # a big pool uses a number box: Paladin Lay on Hands
+        await pl.evaluate("()=>{const c=curChar();c.cls='Paladin';c.subclass='';c.level=4;saveChar(c,true);render()}"); await pl.wait_for_timeout(200)
+        await pl.fill("[data-act-change=dnd-respool][data-k=loh]", "13"); await pl.press("[data-act-change=dnd-respool][data-k=loh]", "Tab"); await pl.wait_for_timeout(150)
+        ok(await pl.evaluate("curChar().res.loh") == 7, "Lay on Hands is a pool of 20 at level 4; setting 13 left records 7 spent")
+        await pl.evaluate("()=>{const c=curChar();c.cls='Fighter';c.subclass='Champion';c.level=5;saveChar(c,true)}")
+        cid = await pl.evaluate("curChar().id")
+
+        # ---------- the GM's Combat tab ----------
+        gm = await page(b, "GM", "gm.html")
+        await gm.evaluate("x=>{st.party.push(dndNormalize(x));save(true);render()}", await pl.evaluate("(id)=>clone(S.chars.get(id))", cid))
+        await gm.wait_for_timeout(200)
+        await click(gm, "[data-act=tab][data-t=combat]")
+        ok(await gm.locator(".dnd-combat h3:text-is('Set up a fight')").count() == 1, "the Combat tab starts empty")
+        await click(gm, "[data-act=dnd-cbparty]")
+        ok(await gm.locator(".dnd-cbrow.pc:has-text('Brann')").count() == 1, "Add the party puts Brann in the fight")
+        await click(gm, "[data-act=dnd-monpick]")
+        ok(await gm.evaluate("DND_MONSTERS.length") >= 300, "over 300 SRD monsters to pick from")
+        await gm.fill("#dnd-mon-q", "goblin warrior"); await gm.wait_for_timeout(250)
+        await gm.fill(".dnd-pickrow:has-text('Goblin Warrior') .dnd-moncount", "3"); await gm.wait_for_timeout(100)
+        await click(gm, ".dnd-pickrow:has-text('Goblin Warrior') .dnd-pickname")
+        ok(await gm.locator(".dnd-pickdetail .dnd-statblock").count() == 1, "a monster's stat block opens in the picker")
+        await shot(gm, "r2-monpicker")
+        await click(gm, ".dnd-pickrow:has-text('Goblin Warrior') [data-act=dnd-monadd]")
+        await gm.fill("#dnd-mon-q", "owlbear"); await gm.wait_for_timeout(250)
+        await click(gm, ".dnd-pickrow:has(.dnd-pickname b:text-is('Owlbear')) [data-act=dnd-monadd]")
+        await click(gm, "[data-act=close-modal]")
+        names = await gm.evaluate("dndCombat().list.map(e=>e.name)"); print(names)
+        ok(names == ["Brann", "Goblin Warrior 1", "Goblin Warrior 2", "Goblin Warrior 3", "Owlbear"], "three numbered goblins and an owlbear join")
+        x = await gm.evaluate("dndXpSummary()"); print(x)
+        ok(x["xp"] == 3 * 50 + 700 and x["budget"] == [500, 750, 1100] and x["label"] == "High", "850 XP against a level 5 character's budget (500 / 750 / 1,100) is High")
+        ok(await gm.locator(".dnd-xpbar:has-text('High difficulty')").count() == 1, "the difficulty shows above the list")
+        # initiative
+        await gm.evaluate("window.__r=Math.random;Math.random=()=>0.5"); await click(gm, "[data-act=dnd-cbinitroll][data-w=all]"); await gm.evaluate("Math.random=window.__r")
+        inits = await gm.evaluate("dndCombat().list.map(e=>[e.name,e.init])"); print(inits)
+        ok(all(i[1] is not None for i in inits) and inits == sorted(inits, key=lambda e: -e[1]), "everyone rolls initiative and the list is sorted highest first")
+        ok(await gm.evaluate("dndCombat().list.find(e=>e.name==='Owlbear').init") == 11 + 1, "the owlbear rolls 11 + its +1")
+        first = inits[0][0]
+        ok(await gm.locator(f".dnd-cbrow.on:has-text('{first}')").count() == 1, "the first in the order has the turn")
+        n = len(inits)
+        for _ in range(n): await click(gm, "[data-act=dnd-cbturn][data-d='1']")
+        ok(await gm.evaluate("[dndCombat().round,dndCombat().turn]") == [2, 0], "going round everyone starts round 2")
+        ok(await gm.evaluate("dndCbActiveTurn()") == ({"kind": "pc", "ref": cid} if first == "Brann" else await gm.evaluate("({kind:'npc',ref:dndCombat().list[0].cid})")), "the map knows whose turn it is")
+        # damage a goblin and the fighter
+        g = await gm.evaluate("dndCombat().list.find(e=>e.name==='Goblin Warrior 1').cid")
+        await gm.fill(f"[data-cbamt='{g}']", "4"); await click(gm, f"[data-act=dnd-cbhit][data-c='{g}']")
+        ok(await gm.evaluate(f"dndCombat().list.find(e=>e.cid==='{g}').hp") == 10 - 4, "4 damage to a goblin warrior (10 HP) leaves 6")
+        await gm.fill(f"[data-cbamt='{g}']", "20"); await click(gm, f"[data-act=dnd-cbhit][data-c='{g}']")
+        ok(await gm.locator(f"[data-cid-row='{g}'].out").count() == 1, "dropping it to 0 marks it down")
+        pcid = await gm.evaluate("dndCombat().list.find(e=>e.kind==='pc').cid")
+        hp0 = await gm.evaluate("dndCalc(st.party[0]).hp")
+        await gm.fill(f"[data-cbamt='{pcid}']", "5"); await click(gm, f"[data-act=dnd-cbhit][data-c='{pcid}']")
+        ok(await gm.evaluate("dndCalc(st.party[0]).hp") == hp0 - 5, "damage to a party member goes onto their sheet")
+        # stat block rolls
+        o = await gm.evaluate("dndCombat().list.find(e=>e.name==='Owlbear').cid")
+        await click(gm, f"[data-act=dnd-cbopen][data-c='{o}']")
+        await gm.evaluate("window.__r=Math.random;Math.random=()=>0.5")
+        await click(gm, f"[data-cid-row='{o}'] [data-act=dnd-monroll][data-r=hit] >> nth=0")
+        hit = await gm.evaluate("Dice.log[0]")
+        await click(gm, f"[data-cid-row='{o}'] [data-act=dnd-monroll][data-r=dmg] >> nth=0")
+        dmg = await gm.evaluate("Dice.log[0]"); await gm.evaluate("Math.random=window.__r"); print(hit, dmg)
+        ok(hit["label"].endswith("to hit") and hit["total"] == 11 + 7, "the owlbear's attack rolls d20 + 7")
+        ok(dmg["label"].endswith("damage") and dmg["total"] > 0, "and its damage rolls")
+        await shot(gm, "r3-combat")
+        # map
+        await gm.evaluate("()=>{st.maps=st.maps||[];st.maps.push(newMapData({name:'Cave'}));save(true)}")
+        await click(gm, "[data-act=dnd-cbplace]")
+        toks = await gm.evaluate("st.maps[0].tokens.filter(t=>t.kind==='npc').map(t=>[t.label,t.size])"); print(toks)
+        ok(len(toks) == 4 and ["Owlbear", 2] in toks, "the four monsters go on the map, the owlbear two squares wide")
+        ring = await gm.evaluate(f"dndCbTokenRing({{kind:'npc',ref:'{g}'}})"); print(ring)
+        ok(ring is not None and ring["dead"] is True and ring["frac"] <= 0.05, "the downed goblin's token ring shows it down")
+        await click(gm, f"[data-act=dnd-cbremove][data-c='{o}']")
+        ok(await gm.evaluate("st.maps[0].tokens.filter(t=>t.kind==='npc').length") == 3, "removing the owlbear takes its token off the map")
+        # it all survives a reload
+        await gm.reload(); await gm.wait_for_function("()=>typeof GAME!=='undefined'&&!!GAME"); await gm.wait_for_timeout(300)
+        ok(await gm.evaluate("dndCombat().list.length") == 4, "the fight is saved with the campaign")
+        print("errors:", errs); ok(not errs, "no page errors")
+        await b.close()
+    sys.exit(finish())
+
+asyncio.run(main())

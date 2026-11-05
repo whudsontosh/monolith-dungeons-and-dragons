@@ -142,6 +142,7 @@ function dndMainTab(c, k) {
         ${dndTile("Proficiency", `<b class="dnd-big">${sgn(k.pb)}</b>`)}
       </div>
       ${dndHpPanel(c, k)}
+      ${dndResourcesPanel(c)}
       ${dndConditionsPanel(c, k)}
     </div>
   </div>
@@ -383,9 +384,11 @@ Object.assign(A, {
     if (r.nat === 1) c.death.f = Math.min(3, c.death.f + 2); else if (r.total >= 10) c.death.s = Math.min(3, c.death.s + 1); else c.death.f = Math.min(3, c.death.f + 1);
     if (c.death.f >= 3) showNotice(`${dndName(c)} has failed three death saves and dies.`);
     else if (c.death.s >= 3) { c.death = { s: 0, f: 0 }; showNotice(`${dndName(c)} is stable: still at 0 HP and unconscious, but no longer dying.`); } }),
-  "dnd-short": dndAct(c => { c.pactUsed = 0; showNotice(`Short rest: spend hit dice to heal.${dndCalc(c).pact[0] ? " Pact slots are back." : ""}`); }),
+  "dnd-short": dndAct(c => { c.pactUsed = 0; dndRestResources(c, "short");
+    const back = dndResources(c).filter(r => r.rest !== "long").map(r => r.n);
+    showNotice(`Short rest: spend hit dice to heal.${dndCalc(c).pact[0] ? " Pact slots are back." : ""}${back.length ? ` ${back.join(", ")} recharged.` : ""}`); }),
   "dnd-long": dndAct(c => {
-    c.hp = null; c.hpTemp = 0; c.hdSpent = 0; c.slotsUsed = c.slotsUsed.map(() => 0); c.pactUsed = 0; c.death = { s: 0, f: 0 };
+    c.hp = null; c.hpTemp = 0; c.hdSpent = 0; c.slotsUsed = c.slotsUsed.map(() => 0); c.pactUsed = 0; dndRestResources(c, "long"); if (c.species === "Human") c.insp = true;  c.death = { s: 0, f: 0 };
     c.exhaustion = Math.max(0, c.exhaustion - 1); c.conditions = c.conditions.filter(x => x !== "Unconscious");
     showNotice(`Long rest: ${dndName(c)} is back to full hit points, with every hit die and spell slot restored${c.exhaustion ? " and one level of exhaustion gone" : ""}.`); }),
 });

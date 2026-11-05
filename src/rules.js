@@ -80,7 +80,8 @@ function dndBlank() {
     feats: [],                  // feats taken: {n, lvl, src}
     choices: {},                // a feature's picks: {"Eldritch Invocations": ["Agonizing Blast"], ...}
     hpRolls: {},                // hit point rolls by level (no entry = the average)
-    pendingLevel: 0,            // the creator's target level while its level-ups are still being made
+    pendingLevel: 0,            // (no longer used; kept so older characters load)
+    res: {},                    // class resources used: {rage: 1, cd: 0, ...} (see resources.js)
     color: "", done: false, build: null, createdAt: now, updatedAt: now,
   };
 }
@@ -104,6 +105,7 @@ function dndNormalize(x) {
   const ch = {}; Object.entries(c.choices && typeof c.choices === "object" ? c.choices : {}).slice(0, 20).forEach(([k, v]) => { if (Array.isArray(v)) ch[str(k, 60)] = v.slice(0, 20).map(x => str(x, 80)).filter(Boolean); }); c.choices = ch;
   const hr = {}; Object.entries(c.hpRolls && typeof c.hpRolls === "object" ? c.hpRolls : {}).forEach(([k, v]) => { const L = Number(k), n = Number(v); if (L >= 2 && L <= 20 && n >= 1 && n <= 12) hr[L] = Math.round(n); }); c.hpRolls = hr;
   c.pendingLevel = num(c.pendingLevel, 0, 20, 0);
+  const rs = {}; Object.entries(c.res && typeof c.res === "object" ? c.res : {}).slice(0, 30).forEach(([k, v]) => { const n = Number(v); if (n > 0) rs[str(k, 20)] = Math.min(999, Math.round(n)); }); c.res = rs;
   c.ac = num(c.ac, 0, 50, 10); c.speed = num(c.speed, 0, 300, 0); c.initBonus = num(c.initBonus, -20, 20, 0);
   c.hpMax = num(c.hpMax, 0, 9999, 0); c.hp = c.hp == null || c.hp === "" ? null : num(c.hp, 0, 9999, 0);
   c.hpTemp = num(c.hpTemp, 0, 9999, 0); c.hdSpent = num(c.hdSpent, 0, 20, 0);
