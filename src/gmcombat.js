@@ -43,7 +43,7 @@ function dndCbRollInit(which) {
 function dndCbNext(dir) {
   const cb = dndCombat(); const n = cb.list.length; if (!n) return;
   for (let step = 0; step < n; step++) {
-    cb.turn += dir; if (cb.turn >= n) { cb.turn = 0; cb.round++; } if (cb.turn < 0) { cb.turn = n - 1; cb.round = Math.max(1, cb.round - 1); }
+    cb.turn += dir; if (cb.turn >= n) { cb.turn = 0; cb.round++; try { if (Monolith.map && Monolith.map.endRound) Monolith.map.endRound(); } catch (e) { console.error(e); } } // a new round: timed conditions on map tokens count down (Monolith 1.4) if (cb.turn < 0) { cb.turn = n - 1; cb.round = Math.max(1, cb.round - 1); }
     if (!dndCbOut(cb.list[cb.turn])) break;
   }
 }

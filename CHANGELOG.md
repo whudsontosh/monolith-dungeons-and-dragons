@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.3
+
+- **Conditions on map tokens.** With Monolith 1.4.0 or later, right-click a token to mark it Blinded,
+  Grappled, Prone and the rest, plus Concentrating. Badges show around the token.
+- A condition can last a number of rounds. It counts down when the combat tracker starts a new round
+  and comes off by itself.
+
+Token badges are separate from the conditions on a character's sheet for now.
+
 ## 0.6.2
 
 - **Spell areas on the map.** With Monolith 1.3.0 or later, the map's Template tool has ready-made

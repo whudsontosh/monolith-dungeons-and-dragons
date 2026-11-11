@@ -54,7 +54,14 @@ Monolith.registerGame({
   id: "dnd", api: 1, diceLabel: "D20",
   // new maps (Monolith 1.2): squares are 5 ft and a diagonal costs one square, the 2024 rule
   // area templates (Monolith 1.3): they start on a grid corner and affect a square that is at least half covered
-  map: { diag: "one", unit: { n: 5, u: "ft" }, inside: "cells", origin: "corner", templates: [
+  map: { diag: "one", unit: { n: 5, u: "ft" }, inside: "cells", origin: "corner",
+    // token badges (Monolith 1.4): the conditions, plus Concentrating
+    conditions: [...DND_CONDITIONS, "Concentrating"].map((n, i) => ({ id: n.toLowerCase(), name: n,
+      color: ["#8b8f9c", "#ff5fa2", "#8b8f9c", "#c77dff", "#a76200", "#ff4459", "#7d95ff", "#ffd94a", "#6b7280", "#4cc98c", "#7d95ff", "#a76200", "#f2a93b", "#ff4459", "#38d6f0"][i % 15],
+      icon: { invisible: "M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6zM4.5 4.5l15 15", prone: "M12 4v11M7 10.5l5 5 5-5M4 20h16",
+        stunned: "M12 3.5l2.4 5.6 6.1.5-4.6 4 1.4 6-5.3-3.2-5.3 3.2 1.4-6-4.6-4 6.1-.5z", blinded: "M3 10c2.5 3 5.5 4.5 9 4.5s6.5-1.5 9-4.5M6 13.5l-1.5 3M12 14.5V18M18 13.5l1.5 3",
+        concentrating: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z" }[n.toLowerCase()] || "" })),
+    templates: [
     { id: "burning-hands", name: "Burning Hands", shape: "cone", size: 15, color: "#ff7a3c" },
     { id: "thunderwave", name: "Thunderwave", shape: "square", size: 15, color: "#7d95ff" },
     { id: "shatter", name: "Shatter", shape: "circle", size: 10, color: "#c77dff" },
