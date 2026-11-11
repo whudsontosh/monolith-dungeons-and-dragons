@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.2
+
+- **Spell areas on the map.** With Monolith 1.3.0 or later, the map's Template tool has ready-made
+  areas for ten common spells, from Burning Hands to Fireball and Lightning Bolt. You can still draw
+  any circle, cone, line or square by hand.
+- Templates follow the 2024 grid rules: they start on a grid corner, and a creature is caught when
+  its square is at least half covered.
+
 ## 0.6.1
 
 - **Maps in feet.** With Monolith 1.2.0 or later, new maps measure in feet: each square is 5 ft and a

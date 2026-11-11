@@ -53,7 +53,19 @@ Monolith.hooks.trayQuick = () => [["d4", "1D4"], ["d6", "1D6"], ["d8", "1D8"], [
 Monolith.registerGame({
   id: "dnd", api: 1, diceLabel: "D20",
   // new maps (Monolith 1.2): squares are 5 ft and a diagonal costs one square, the 2024 rule
-  map: { diag: "one", unit: { n: 5, u: "ft" } },
+  // area templates (Monolith 1.3): they start on a grid corner and affect a square that is at least half covered
+  map: { diag: "one", unit: { n: 5, u: "ft" }, inside: "cells", origin: "corner", templates: [
+    { id: "burning-hands", name: "Burning Hands", shape: "cone", size: 15, color: "#ff7a3c" },
+    { id: "thunderwave", name: "Thunderwave", shape: "square", size: 15, color: "#7d95ff" },
+    { id: "shatter", name: "Shatter", shape: "circle", size: 10, color: "#c77dff" },
+    { id: "darkness", name: "Darkness", shape: "circle", size: 15, color: "#7d95ff" },
+    { id: "fog-cloud", name: "Fog Cloud", shape: "circle", size: 20, color: "#ffffff" },
+    { id: "entangle", name: "Entangle", shape: "square", size: 20, color: "#4cc98c" },
+    { id: "web", name: "Web", shape: "square", size: 20, color: "#ffffff" },
+    { id: "fireball", name: "Fireball", shape: "circle", size: 20, color: "#ff7a3c" },
+    { id: "lightning-bolt", name: "Lightning Bolt", shape: "line", size: 100, width: 5, color: "#38d6f0" },
+    { id: "cone-of-cold", name: "Cone of Cold", shape: "cone", size: 60, color: "#38d6f0" },
+  ] },
   // the 3D dice (Monolith 1.1): oxblood with gold edges and numbers
   dice: { body: "#5a160c", edge: "#c9a24f", text: "#f3e6c8", high: "#ffd36b", low: "#f0937f", font: '"Cinzel",Georgia,serif' },
   rulesets: { "dnd5.5e": {
