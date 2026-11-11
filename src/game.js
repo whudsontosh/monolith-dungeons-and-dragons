@@ -52,6 +52,8 @@ Monolith.hooks.trayQuick = () => [["d4", "1D4"], ["d6", "1D6"], ["d8", "1D8"], [
 
 Monolith.registerGame({
   id: "dnd", api: 1, diceLabel: "D20",
+  // new maps (Monolith 1.2): squares are 5 ft and a diagonal costs one square, the 2024 rule
+  map: { diag: "one", unit: { n: 5, u: "ft" } },
   // the 3D dice (Monolith 1.1): oxblood with gold edges and numbers
   dice: { body: "#5a160c", edge: "#c9a24f", text: "#f3e6c8", high: "#ffd36b", low: "#f0937f", font: '"Cinzel",Georgia,serif' },
   rulesets: { "dnd5.5e": {

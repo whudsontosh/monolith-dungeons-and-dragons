@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+- **Maps in feet.** With Monolith 1.2.0 or later, new maps measure in feet: each square is 5 ft and a
+  diagonal costs one square, the 2024 rule. The GM can switch a map to hexes or to the 5/10 ft
+  diagonal rule in Map settings. Maps you already have keep their settings.
+
 ## 0.6.0
 
 Class features on attacks, companions and Wild Shape, and homebrew.
