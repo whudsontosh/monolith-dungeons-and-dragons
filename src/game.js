@@ -55,6 +55,8 @@ Monolith.registerGame({
   // new maps (Monolith 1.2): squares are 5 ft and a diagonal costs one square, the 2024 rule
   // area templates (Monolith 1.3): they start on a grid corner and affect a square that is at least half covered
   map: { diag: "one", unit: { n: 5, u: "ft" }, inside: "cells", origin: "corner",
+    // light and sight (Monolith 1.6): a character's darkvision, blindsight or truesight is how far its token sees in the dark
+    sightFor(c) { try { const s = dndCalc(c).senses; return { dark: Math.max(s.dv || 0, s.bs || 0, s.tr || 0) }; } catch (e) { return null; } },
     // token badges (Monolith 1.4): the conditions, plus Concentrating
     conditions: [...DND_CONDITIONS, "Concentrating"].map((n, i) => ({ id: n.toLowerCase(), name: n,
       color: ["#8b8f9c", "#ff5fa2", "#8b8f9c", "#c77dff", "#a76200", "#ff4459", "#7d95ff", "#ffd94a", "#6b7280", "#4cc98c", "#7d95ff", "#a76200", "#f2a93b", "#ff4459", "#38d6f0"][i % 15],

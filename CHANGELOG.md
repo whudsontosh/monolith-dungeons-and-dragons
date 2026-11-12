@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.4
+
+- **Darkvision on the map.** With Monolith 1.6.0 or later, a character's Darkvision (or Blindsight or
+  Truesight) is how far their token sees on a dark map. The GM can change it on the token.
+
 ## 0.6.3
 
 - **Conditions on map tokens.** With Monolith 1.4.0 or later, right-click a token to mark it Blinded,
